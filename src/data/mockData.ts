@@ -1,0 +1,352 @@
+import { Unit, Renter, Service, Transaction, Notification, Task, Statistics, Contract } from '../types';
+
+// Mock Units
+export const units: Unit[] = [
+  {
+    id: '1',
+    roomNumber: '101',
+    type: 'Single',
+    status: 'Occupied',
+    price: 550,
+    checkInDate: '2023-05-15',
+    services: ['Electric', 'Water', 'Internet'],
+    rentalTerm: 'Long',
+    electricUsage: 120,
+    waterUsage: 35,
+  },
+  {
+    id: '2',
+    roomNumber: '102',
+    type: 'Single',
+    status: 'Available',
+    price: 525,
+    services: ['Electric', 'Water'],
+    rentalTerm: 'Long',
+  },
+  {
+    id: '3',
+    roomNumber: '103',
+    type: 'Double',
+    status: 'Reserved',
+    price: 750,
+    checkInDate: '2023-06-01',
+    checkOutDate: '2023-06-15',
+    services: ['Electric', 'Water', 'Internet', 'Cleaning'],
+    rentalTerm: 'Short',
+  },
+  {
+    id: '4',
+    roomNumber: '201',
+    type: 'Suite',
+    status: 'Occupied',
+    price: 1200,
+    checkInDate: '2023-03-10',
+    services: ['Electric', 'Water', 'Internet', 'Cleaning'],
+    rentalTerm: 'Long',
+    electricUsage: 185,
+    waterUsage: 48,
+  },
+  {
+    id: '5',
+    roomNumber: '202',
+    type: 'Double',
+    status: 'Maintenance',
+    price: 700,
+    services: ['Electric', 'Water', 'Internet'],
+    rentalTerm: 'Long',
+  },
+  {
+    id: '6',
+    roomNumber: '203',
+    type: 'Studio',
+    status: 'Available',
+    price: 850,
+    services: ['Electric', 'Water', 'Internet', 'Cleaning'],
+    rentalTerm: 'Long',
+  },
+];
+
+// Mock Renters
+export const renters: Renter[] = [
+  {
+    id: '1',
+    name: 'Alex Johnson',
+    email: 'alex@example.com',
+    phone: '555-123-4567',
+    personalId: 'AJ12345678',
+    avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=300',
+    unitId: '1',
+    checkInDate: '2023-05-15',
+  },
+  {
+    id: '2',
+    name: 'Maria Garcia',
+    email: 'maria@example.com',
+    phone: '555-987-6543',
+    personalId: 'MG98765432',
+    avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=300',
+    unitId: '4',
+    checkInDate: '2023-03-10',
+  },
+  {
+    id: '3',
+    name: 'John Smith',
+    email: 'john@example.com',
+    phone: '555-456-7890',
+    personalId: 'JS45678901',
+    unitId: '3',
+    checkInDate: '2023-06-01',
+    checkOutDate: '2023-06-15',
+  },
+];
+
+// Mock Services
+export const services: Service[] = [
+  {
+    id: '1',
+    name: 'Electric',
+    icon: 'zap',
+    fee: 50,
+    feeType: 'Monthly',
+    information: 'Basic electricity service',
+    phone: '555-111-2222',
+  },
+  {
+    id: '2',
+    name: 'Water',
+    icon: 'droplets',
+    fee: 35,
+    feeType: 'Monthly',
+    information: 'Water supply',
+    phone: '555-222-3333',
+  },
+  {
+    id: '3',
+    name: 'Internet',
+    icon: 'wifi',
+    fee: 45,
+    feeType: 'Monthly',
+    information: 'High-speed internet access',
+    phone: '555-333-4444',
+  },
+  {
+    id: '4',
+    name: 'Cleaning',
+    icon: 'brush',
+    fee: 70,
+    feeType: 'Monthly',
+    information: 'Weekly cleaning service',
+    phone: '555-444-5555',
+  },
+  {
+    id: '5',
+    name: 'Maintenance',
+    icon: 'wrench',
+    fee: 100,
+    feeType: 'One-time',
+    information: 'On-demand maintenance and repairs',
+    phone: '555-555-6666',
+  },
+];
+
+// Mock Contracts
+export const mockContracts: Contract[] = [
+  {
+    id: 'contract1',
+    roomId: '1',
+    roomName: 'Room 101',
+    renterIds: ['1'],
+    renterNames: ['Alex Johnson'],
+    startDate: '2023-05-15',
+    endDate: '2024-05-15',
+    contractType: 'longTerm',
+    status: 'active',
+    amount: 550,
+  },
+  {
+    id: 'contract2',
+    roomId: '4',
+    roomName: 'Room 201',
+    renterIds: ['2'],
+    renterNames: ['Maria Garcia'],
+    startDate: '2023-03-10',
+    endDate: '2024-03-10',
+    contractType: 'longTerm',
+    status: 'active',
+    amount: 1200,
+  },
+  {
+    id: 'contract3',
+    roomId: '3',
+    roomName: 'Room 103',
+    renterIds: ['3'],
+    renterNames: ['John Smith'],
+    startDate: '2023-06-01',
+    endDate: '2023-06-15',
+    contractType: 'shortTerm',
+    status: 'active',
+    amount: 750,
+  },
+  {
+    id: 'contract4',
+    roomId: '5',
+    roomName: 'Room 202',
+    renterIds: ['4', '5'],
+    renterNames: ['Robert Wilson', 'Emily Davis'],
+    startDate: '2022-12-01',
+    endDate: '2023-02-28',
+    contractType: 'shortTerm',
+    status: 'expired',
+    amount: 700,
+  },
+  {
+    id: 'contract5',
+    roomId: '6',
+    roomName: 'Room 203',
+    renterIds: ['6'],
+    renterNames: ['David Brown'],
+    startDate: '2022-11-15',
+    endDate: '2023-01-15',
+    contractType: 'shortTerm',
+    status: 'terminated',
+    amount: 850,
+  },
+];
+
+// Mock Transactions
+export const transactions: Transaction[] = [
+  {
+    id: '1',
+    unitId: '1',
+    renterId: '1',
+    type: 'Income',
+    category: 'Rent',
+    amount: 550,
+    date: '2023-05-15',
+    description: 'May rent payment',
+  },
+  {
+    id: '2',
+    unitId: '4',
+    renterId: '2',
+    type: 'Income',
+    category: 'Rent',
+    amount: 1200,
+    date: '2023-05-01',
+    description: 'May rent payment',
+  },
+  {
+    id: '3',
+    unitId: '5',
+    renterId: '',
+    type: 'Expense',
+    category: 'Maintenance',
+    amount: 250,
+    date: '2023-05-10',
+    description: 'Plumbing repairs',
+  },
+  {
+    id: '4',
+    unitId: '',
+    renterId: '',
+    type: 'Expense',
+    category: 'Other',
+    amount: 125,
+    date: '2023-05-05',
+    description: 'Cleaning supplies',
+  },
+  {
+    id: '5',
+    unitId: '1',
+    renterId: '1',
+    type: 'Income',
+    category: 'Service',
+    amount: 95,
+    date: '2023-05-20',
+    description: 'Additional services',
+  },
+];
+
+// Mock Notifications
+export const notifications: Notification[] = [
+  {
+    id: '1',
+    title: 'New Reservation',
+    description: 'Room 103 has been reserved',
+    time: '2 hours ago',
+    read: false,
+    type: 'info',
+  },
+  {
+    id: '2',
+    title: 'Maintenance Completed',
+    description: 'Room 202 maintenance is done',
+    time: '5 hours ago',
+    read: true,
+    type: 'success',
+  },
+  {
+    id: '3',
+    title: 'Payment Overdue',
+    description: 'Alex Johnson has an overdue payment',
+    time: '1 day ago',
+    read: false,
+    type: 'error',
+  },
+  {
+    id: '4',
+    title: 'New Renter',
+    description: 'Maria Garcia has checked in to room 201',
+    time: '3 days ago',
+    read: true,
+    type: 'success',
+  },
+];
+
+// Mock Tasks
+export const tasks: Task[] = [
+  {
+    id: '1',
+    title: 'Check-in new tenant at room 103',
+    date: '2023-06-01',
+    completed: false,
+  },
+  {
+    id: '2',
+    title: 'Collect rent from room 201',
+    date: '2023-06-05',
+    completed: false,
+  },
+  {
+    id: '3',
+    title: 'Schedule maintenance for room 202',
+    date: '2023-05-25',
+    completed: true,
+  },
+  {
+    id: '4',
+    title: 'Inspect room 101 for damages',
+    date: '2023-05-28',
+    completed: false,
+  },
+];
+
+// Mock Statistics
+export const statistics: Statistics = {
+  totalUnits: 6,
+  occupiedUnits: 2,
+  availableUnits: 2,
+  totalRenters: 3,
+  monthlyIncome: 2750,
+  overduePayments: 550,
+};
+
+// Mock monthly data for charts
+export const monthlyData = [
+  { month: 'Jan', revenue: 5200, expense: 1800, profit: 3400 },
+  { month: 'Feb', revenue: 6300, expense: 2100, profit: 4200 },
+  { month: 'Mar', revenue: 6800, expense: 2300, profit: 4500 },
+  { month: 'Apr', revenue: 7100, expense: 2500, profit: 4600 },
+  { month: 'May', revenue: 7500, expense: 2700, profit: 4800 },
+  { month: 'Jun', revenue: 7800, expense: 2600, profit: 5200 },
+];

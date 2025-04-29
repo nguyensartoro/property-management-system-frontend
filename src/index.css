@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-secondary-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.5;
+    color: var(--secondary-900, #1f2937);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium text-secondary-900;
+    line-height: 1.25;
+  }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  h4 { font-size: 1.125rem; }
+  h5 { font-size: 1rem; }
+  h6 { font-size: 0.875rem; }
+
+  p, li, input, textarea, button, select {
+    font-size: 1rem;
+  }
+
+  small {
+    font-size: 0.875rem;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  .sidebar-item {
+    @apply flex items-center gap-3 p-3 rounded-md text-secondary-500 hover:bg-primary-50 hover:text-primary-600 transition-all duration-200;
+  }
+
+  .sidebar-item.active {
+    @apply bg-primary-50 text-primary-600 font-medium;
+  }
+
+  .dashboard-card {
+    @apply bg-white p-6 rounded-xl shadow-sm;
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-primary-500 text-white hover:bg-primary-600;
+  }
+
+  .btn-outline {
+    @apply border border-primary-200 text-primary-700 hover:bg-primary-50;
+  }
+
+  .btn-danger {
+    @apply bg-danger-400 text-white hover:bg-danger-500;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-success-400/10 text-success-500;
+  }
+
+  .badge-warning {
+    @apply bg-warning-400/10 text-warning-400;
+  }
+
+  .badge-danger {
+    @apply bg-danger-400/10 text-danger-400;
+  }
+
+  .badge-neutral {
+    @apply bg-secondary-200 text-secondary-700;
+  }
+
+  /* Consistent table styling for all pages */
+  .data-table {
+    @apply min-w-full divide-y divide-gray-200;
+  }
+
+  .data-table th {
+    @apply px-4 py-3 text-xs font-medium tracking-wider text-left uppercase text-secondary-500 bg-gray-50;
+  }
+
+  .data-table td {
+    @apply px-4 py-3 text-sm text-secondary-900;
+  }
+
+  .data-table tr {
+    @apply hover:bg-gray-50;
+  }
+
+  .data-table tr:not(:last-child) {
+    @apply border-b border-gray-200;
+  }
+}
+
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s ease-out forwards;
+}

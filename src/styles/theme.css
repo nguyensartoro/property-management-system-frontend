@@ -1,0 +1,116 @@
+:root {
+  /* Default theme variables */
+  --radius: 0.5rem;
+  
+  /* Primary colors */
+  --primary-50: #f4f2ff;
+  --primary-100: #e9e4ff;
+  --primary-200: #d3c9ff;
+  --primary-300: #b8a4ff;
+  --primary-400: #9b87f5;
+  --primary-500: #8666ea;
+  --primary-600: #7E69AB;
+  --primary-700: #6340c4;
+  --primary-800: #5336a3;
+  --primary-900: #452d85;
+  --primary-950: #281a4d;
+  
+  /* Secondary colors */
+  --secondary-50: #f4f7fb;
+  --secondary-100: #e9eff6;
+  --secondary-200: #d3deec;
+  --secondary-300: #b0c3da;
+  --secondary-400: #88a3c5;
+  --secondary-500: #6885b1;
+  --secondary-600: #516b96;
+  --secondary-700: #42567a;
+  --secondary-800: #394a67;
+  --secondary-900: #1A1F2C;
+  --secondary-950: #111827;
+  
+  /* Font size variables */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  
+  /* Default font family */
+  font-family: var(--font-family, Inter), sans-serif;
+}
+
+/* Theme classes for font family */
+.font-inter {
+  --font-family: 'Inter';
+}
+
+.font-roboto {
+  --font-family: 'Roboto';
+}
+
+.font-opensans {
+  --font-family: 'Open Sans';
+}
+
+/* Font size utility classes */
+.text-size-xs {
+  font-size: var(--font-size-xs);
+}
+
+.text-size-sm {
+  font-size: var(--font-size-sm);
+}
+
+.text-size-base {
+  font-size: var(--font-size-base);
+}
+
+.text-size-lg {
+  font-size: var(--font-size-lg);
+}
+
+.text-size-xl {
+  font-size: var(--font-size-xl);
+}
+
+.text-size-2xl {
+  font-size: var(--font-size-2xl);
+}
+
+.text-size-3xl {
+  font-size: var(--font-size-3xl);
+}
+
+.text-size-4xl {
+  font-size: var(--font-size-4xl);
+}
+
+/* Dark mode overrides */
+.dark {
+  --primary-50: #281a4d;
+  --primary-100: #452d85;
+  --primary-200: #5336a3;
+  --primary-300: #6340c4;
+  --primary-400: #7E69AB;
+  --primary-500: #8666ea;
+  --primary-600: #9b87f5;
+  --primary-700: #b8a4ff;
+  --primary-800: #d3c9ff;
+  --primary-900: #e9e4ff;
+  --primary-950: #f4f2ff;
+  
+  --secondary-50: #111827;
+  --secondary-100: #1A1F2C;
+  --secondary-200: #394a67;
+  --secondary-300: #42567a;
+  --secondary-400: #516b96;
+  --secondary-500: #6885b1;
+  --secondary-600: #88a3c5;
+  --secondary-700: #b0c3da;
+  --secondary-800: #d3deec;
+  --secondary-900: #e9eff6;
+  --secondary-950: #f4f7fb;
+} 
