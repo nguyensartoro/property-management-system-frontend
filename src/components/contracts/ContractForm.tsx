@@ -47,10 +47,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
 }) => {
   const toast = useToastHook();
   const isEditMode = !!existingContract;
-  
+
   const [roomSelectionOpen, setRoomSelectionOpen] = useState(false);
   const [renterSelectionOpen, setRenterSelectionOpen] = useState(false);
-  
+
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const [selectedRenterIds, setSelectedRenterIds] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -60,7 +60,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
   );
   const [amount, setAmount] = useState<string>('');
   const [termMonths, setTermMonths] = useState<number>(1);
-  
+
   const [startDateCalendarOpen, setStartDateCalendarOpen] = useState(false);
   const [endDateCalendarOpen, setEndDateCalendarOpen] = useState(false);
 
@@ -73,12 +73,12 @@ const ContractForm: React.FC<ContractFormProps> = ({
       setEndDate(new Date(existingContract.endDate));
       setContractType(existingContract.type as any);
       setAmount(existingContract.amount.toString());
-      
+
       // Calculate term months for long term contracts
       if (existingContract.type === 'Long Term') {
         const start = new Date(existingContract.startDate);
         const end = new Date(existingContract.endDate);
-        const diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + 
+        const diffMonths = (end.getFullYear() - start.getFullYear()) * 12 +
                            (end.getMonth() - start.getMonth());
         setTermMonths(diffMonths);
       }
@@ -110,7 +110,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
   const handleStartDateSelect = (date: Date) => {
     setStartDate(date);
     setStartDateCalendarOpen(false);
-    
+
     // Adjust end date if needed
     if (contractType === 'Long Term') {
       const newEndDate = new Date(date);
@@ -127,7 +127,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
   const handleTermMonthsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const months = parseInt(e.target.value);
     setTermMonths(months);
-    
+
     if (startDate) {
       const newEndDate = new Date(startDate);
       newEndDate.setMonth(newEndDate.getMonth() + months);
@@ -142,35 +142,35 @@ const ContractForm: React.FC<ContractFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedRoomId) {
       toast.error("Error", {
         description: "Please select a room"
       });
       return;
     }
-    
+
     if (selectedRenterIds.length === 0) {
       toast.error("Error", {
         description: "Please select at least one renter"
       });
       return;
     }
-    
+
     if (!startDate) {
       toast.error("Error", {
         description: "Please select a start date"
       });
       return;
     }
-    
+
     if (!endDate) {
       toast.error("Error", {
         description: "Please select an end date"
       });
       return;
     }
-    
+
     if (!amount || parseFloat(amount) <= 0) {
       toast.error("Error", {
         description: "Please enter a valid amount"
@@ -205,17 +205,17 @@ const ContractForm: React.FC<ContractFormProps> = ({
   if (!isOpen) return null;
 
   const selectedRoom = rooms.find(room => room.id === selectedRoomId);
-  
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="flex fixed inset-0 z-50 justify-center items-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-[800px] max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
           <h3 className="text-xl font-semibold text-secondary-900">
             {isEditMode ? 'Edit Contract' : 'Add New Contract'}
           </h3>
           <button
             onClick={onClose}
-            className="text-secondary-500 hover:text-secondary-700 p-1"
+            className="p-1 text-secondary-500 hover:text-secondary-700"
             aria-label="Close"
           >
             <X size={20} />
@@ -223,46 +223,46 @@ const ContractForm: React.FC<ContractFormProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1" htmlFor="room">
+              <label className="block mb-1 text-sm font-medium text-secondary-700" htmlFor="room">
                 Room <span className="text-red-500">*</span>
               </label>
-              
+
               <div className="relative">
                 <button
                   type="button"
-                  className="w-full px-4 py-2 text-left border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 hover:bg-gray-50"
+                  className="px-4 py-2 w-full text-left rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400 hover:bg-gray-50"
                   onClick={() => setRoomSelectionOpen(!roomSelectionOpen)}
                   disabled={isEditMode}
                 >
                   {selectedRoom ? `${selectedRoom.roomNumber}` : 'Select a room'}
                 </button>
-                
+
                 {roomSelectionOpen && !isEditMode && (
-                  <div className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto">
+                  <div className="overflow-y-auto absolute z-10 mt-1 w-full max-h-60 bg-white rounded-md border border-gray-200 shadow-lg">
                     <div className="p-2">
                       {rooms.map(room => (
                         <button
                           type="button"
                           key={room.id}
-                          className="flex justify-between items-center w-full px-3 py-2 text-left hover:bg-gray-100 rounded-md"
+                          className="flex justify-between items-center px-3 py-2 w-full text-left rounded-md hover:bg-gray-100"
                           onClick={() => handleRoomSelect(room.id)}
                         >
                           <div className="flex items-center">
                             <div className="mr-2">
-                              <input 
-                                type="radio" 
+                              <input
+                                type="radio"
                                 checked={selectedRoomId === room.id}
                                 onChange={() => {}}
-                                className="h-4 w-4 text-primary-600 focus:ring-primary-400"
+                                className="w-4 h-4 text-primary-600 focus:ring-primary-400"
                               />
                             </div>
                             <span>Room {room.roomNumber}</span>
                           </div>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            room.status === 'Available' 
-                              ? 'bg-green-100 text-green-700' 
+                            room.status === 'Available'
+                              ? 'bg-green-100 text-green-700'
                               : 'bg-gray-100 text-gray-700'
                           }`}>
                             {room.status}
@@ -276,23 +276,23 @@ const ContractForm: React.FC<ContractFormProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
+              <label className="block mb-1 text-sm font-medium text-secondary-700">
                 Renters <span className="text-red-500">*</span>
               </label>
-              
+
               <div className="relative">
                 <button
                   type="button"
-                  className="w-full px-4 py-2 text-left border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 hover:bg-gray-50"
+                  className="px-4 py-2 w-full text-left rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400 hover:bg-gray-50"
                   onClick={() => setRenterSelectionOpen(!renterSelectionOpen)}
                 >
-                  {selectedRenterIds.length > 0 
-                    ? `${selectedRenterIds.length} renter(s) selected` 
+                  {selectedRenterIds.length > 0
+                    ? `${selectedRenterIds.length} renter(s) selected`
                     : 'Select renters'}
                 </button>
-                
+
                 {renterSelectionOpen && (
-                  <div className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto">
+                  <div className="overflow-y-auto absolute z-10 mt-1 w-full max-h-60 bg-white rounded-md border border-gray-200 shadow-lg">
                     <div className="p-2">
                       <div className="flex justify-between items-center p-2 border-b border-gray-200">
                         <p className="text-xs text-secondary-500">Hold Ctrl/Cmd to select multiple</p>
@@ -304,19 +304,19 @@ const ContractForm: React.FC<ContractFormProps> = ({
                           + Add New Renter
                         </button>
                       </div>
-                      
+
                       {renters.map(renter => (
                         <div
                           key={renter.id}
-                          className="flex items-center w-full px-3 py-2 text-left hover:bg-gray-100 rounded-md cursor-pointer"
+                          className="flex items-center px-3 py-2 w-full text-left rounded-md cursor-pointer hover:bg-gray-100"
                           onClick={() => handleRenterToggle(renter.id)}
                         >
                           <div className="mr-2">
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               checked={selectedRenterIds.includes(renter.id)}
                               onChange={() => {}}
-                              className="h-4 w-4 text-primary-600 focus:ring-primary-400 rounded"
+                              className="w-4 h-4 rounded text-primary-600 focus:ring-primary-400"
                             />
                           </div>
                           <div>
@@ -330,20 +330,20 @@ const ContractForm: React.FC<ContractFormProps> = ({
                 )}
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
+              <label className="block mb-1 text-sm font-medium text-secondary-700">
                 Start Date <span className="text-red-500">*</span>
               </label>
-              
+
               <div className="relative">
-                <div className="flex items-center border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-primary-400">
+                <div className="flex items-center rounded-md border border-gray-300 focus-within:ring-2 focus-within:ring-primary-400">
                   <input
                     type="text"
                     value={formatDate(startDate)}
                     readOnly
                     placeholder="dd/mm/yyyy"
-                    className="w-full px-4 py-2 focus:outline-none rounded-md"
+                    className="px-4 py-2 w-full rounded-md focus:outline-none"
                   />
                   <button
                     type="button"
@@ -353,10 +353,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
                     <Calendar size={18} />
                   </button>
                 </div>
-                
+
                 {startDateCalendarOpen && (
-                  <div className="absolute z-20 mt-1 right-0">
-                    <CalendarComponent 
+                  <div className="absolute right-0 z-20 mt-1">
+                    <CalendarComponent
                       onSelectDate={handleStartDateSelect}
                       initialDate={startDate}
                     />
@@ -364,20 +364,20 @@ const ContractForm: React.FC<ContractFormProps> = ({
                 )}
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
+              <label className="block mb-1 text-sm font-medium text-secondary-700">
                 End Date <span className="text-red-500">*</span>
               </label>
-              
+
               <div className="relative">
-                <div className="flex items-center border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-primary-400">
+                <div className="flex items-center rounded-md border border-gray-300 focus-within:ring-2 focus-within:ring-primary-400">
                   <input
                     type="text"
                     value={formatDate(endDate)}
                     readOnly
                     placeholder="dd/mm/yyyy"
-                    className="w-full px-4 py-2 focus:outline-none rounded-md"
+                    className="px-4 py-2 w-full rounded-md focus:outline-none"
                     disabled={contractType === 'Long Term'}
                   />
                   <button
@@ -389,10 +389,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
                     <Calendar size={18} />
                   </button>
                 </div>
-                
+
                 {endDateCalendarOpen && contractType !== 'Long Term' && (
-                  <div className="absolute z-20 mt-1 right-0">
-                    <CalendarComponent 
+                  <div className="absolute right-0 z-20 mt-1">
+                    <CalendarComponent
                       onSelectDate={handleEndDateSelect}
                       initialDate={endDate}
                     />
@@ -400,34 +400,34 @@ const ContractForm: React.FC<ContractFormProps> = ({
                 )}
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1" htmlFor="contractType">
+              <label className="block mb-1 text-sm font-medium text-secondary-700" htmlFor="contractType">
                 Contract Type <span className="text-red-500">*</span>
               </label>
-              
+
               <select
                 id="contractType"
                 value={contractType}
                 onChange={(e) => setContractType(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="px-4 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400"
               >
                 <option value="Long Term">Long Term</option>
                 <option value="Short Term">Short Term</option>
               </select>
             </div>
-            
+
             {contractType === 'Long Term' && (
               <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-1" htmlFor="termMonths">
+                <label className="block mb-1 text-sm font-medium text-secondary-700" htmlFor="termMonths">
                   Term Length <span className="text-red-500">*</span>
                 </label>
-                
+
                 <select
                   id="termMonths"
                   value={termMonths}
                   onChange={handleTermMonthsChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"
+                  className="px-4 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400"
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => (
                     <option key={month} value={month}>
@@ -437,12 +437,12 @@ const ContractForm: React.FC<ContractFormProps> = ({
                 </select>
               </div>
             )}
-            
+
             <div>
-              <label className="block text-sm font-medium text-secondary-700 mb-1" htmlFor="amount">
+              <label className="block mb-1 text-sm font-medium text-secondary-700" htmlFor="amount">
                 Amount (USD) <span className="text-red-500">*</span>
               </label>
-              
+
               <input
                 type="number"
                 id="amount"
@@ -451,23 +451,23 @@ const ContractForm: React.FC<ContractFormProps> = ({
                 placeholder="e.g. 1000"
                 min="0"
                 step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="px-4 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400"
               />
             </div>
           </div>
-          
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-secondary-700 hover:bg-gray-50"
+              className="px-4 py-2 rounded-md border border-gray-300 text-secondary-700 hover:bg-gray-50"
             >
               Cancel
             </button>
-            
+
             <button
               type="submit"
-              className="px-6 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-400"
+              className="px-6 py-2 text-white rounded-md bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-400"
             >
               {isEditMode ? 'Update Contract' : 'Create Contract'}
             </button>
@@ -478,4 +478,4 @@ const ContractForm: React.FC<ContractFormProps> = ({
   );
 };
 
-export default ContractForm; 
+export default ContractForm;

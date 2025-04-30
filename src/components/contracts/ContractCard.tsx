@@ -24,13 +24,13 @@ interface ContractCardProps {
   viewMode?: 'grid' | 'list';
 }
 
-const ContractCard: React.FC<ContractCardProps> = ({ 
-  contract, 
-  onEdit, 
-  onView 
+const ContractCard: React.FC<ContractCardProps> = ({
+  contract,
+  onEdit,
+  onView
 }: ContractCardProps) => {
   const toast = useToastHook();
-  
+
   const handleDelete = () => {
     toast.success('Contract deleted successfully', {
       description: `Contract for Room ${contract.roomName} has been deleted.`
@@ -53,30 +53,30 @@ const ContractCard: React.FC<ContractCardProps> = ({
     >
       <div className="space-y-3">
         <div>
-          <span className="text-xs text-secondary-500 block mb-1">Renters:</span>
+          <span className="block mb-1 text-xs text-secondary-500">Renters:</span>
           <span className="text-sm font-medium text-secondary-900">
             {contract.renterNames.join(', ')}
           </span>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="text-xs text-secondary-500 block mb-1">Start Date:</span>
+            <span className="block mb-1 text-xs text-secondary-500">Start Date:</span>
             <div className="text-sm font-medium text-secondary-900">{contract.startDate}</div>
           </div>
           <div>
-            <span className="text-xs text-secondary-500 block mb-1">End Date:</span>
+            <span className="block mb-1 text-xs text-secondary-500">End Date:</span>
             <div className="text-sm font-medium text-secondary-900">{contract.endDate}</div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="text-xs text-secondary-500 block mb-1">Type:</span>
+            <span className="block mb-1 text-xs text-secondary-500">Type:</span>
             <StatusBadge status={getContractTypeDisplay()} size="sm" />
           </div>
           <div>
-            <span className="text-xs text-secondary-500 block mb-1">Status:</span>
+            <span className="block mb-1 text-xs text-secondary-500">Status:</span>
             <StatusBadge status={contract.status} size="sm" />
           </div>
         </div>
@@ -85,4 +85,4 @@ const ContractCard: React.FC<ContractCardProps> = ({
   );
 };
 
-export default ContractCard; 
+export default ContractCard;

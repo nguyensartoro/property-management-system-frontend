@@ -32,29 +32,29 @@ const ContractsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+
   const handleOpenDetails = (contract: Contract) => {
     if (contract) {
       setSelectedContract(contract);
       setIsDetailsModalOpen(true);
     }
   };
-  
-  const filteredContracts = mockContracts.filter(contract => 
+
+  const filteredContracts = mockContracts.filter(contract =>
     contract.roomName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contract.renterNames.some(name => name && name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-  
+
   const totalPages = Math.ceil(filteredContracts.length / itemsPerPage);
   const paginatedContracts = filteredContracts.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  
+
   const [contracts, setContracts] = useState<Contract[]>(mockContracts);
   const [rooms] = useState(mockContracts.map(contract => ({ id: contract.id, roomNumber: contract.roomName, status: 'Occupied' })));
   const [renters, setRenters] = useState(mockContracts.map(contract => ({ id: contract.id, name: contract.renterNames[0] || 'Unknown', phone: '123-456-7890' })));
-  
+
   const [isContractFormOpen, setIsContractFormOpen] = useState(false);
   const [isRenterFormOpen, setIsRenterFormOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -88,33 +88,33 @@ const ContractsPage: React.FC = () => {
 
   const handleAddRenter = (renterData: any) => {
     if (!renterData) return;
-    
+
     const newRenter = {
       id: renterData.id || `renter-${Date.now()}`,
       name: renterData.name || 'New Renter',
       phone: renterData.phone || 'N/A'
     };
-    
+
     setRenters(prev => [...prev, newRenter]);
   };
 
   const handleContractSubmit = (contractData: any) => {
     if (!contractData) return;
-    
+
     if (isEditMode) {
-      setContracts(prev => 
-        prev.map(contract => 
+      setContracts(prev =>
+        prev.map(contract =>
           contract.id === contractData.id ? contractData : contract
         )
       );
       setSelectedContract(contractData);
-      
+
       toast.success("Contract Updated", {
         description: `Contract ${contractData.contractId || contractData.id} has been updated.`
       });
     } else {
       setContracts(prev => [...prev, contractData]);
-      
+
       toast.success("Contract Created", {
         description: `Contract ${contractData.contractId || contractData.id} has been created.`
       });
@@ -128,8 +128,8 @@ const ContractsPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-secondary-900">Contracts Management</h2>
           <p className="text-secondary-500">Manage all your rental contracts</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={openAddContractForm}
           className="flex gap-2 items-center btn btn-primary"
         >
@@ -137,7 +137,7 @@ const ContractsPage: React.FC = () => {
           <span>Add New Contract</span>
         </button>
       </div>
-      
+
       <div className="dashboard-card">
         <div className="flex flex-col gap-4 justify-between mb-6 md:flex-row">
           <div className="relative w-full md:w-64">
@@ -152,7 +152,7 @@ const ContractsPage: React.FC = () => {
               className="py-2 pr-4 pl-10 w-full rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
             />
           </div>
-          
+
           <div className="flex flex-col gap-4 md:flex-row">
             <div className="flex gap-2 items-center">
               <Filter size={18} className="text-secondary-500" />
@@ -168,17 +168,17 @@ const ContractsPage: React.FC = () => {
                 <option value="amount-low">Amount: Low to High</option>
               </select>
             </div>
-            
+
             <div className="flex gap-2 items-center ml-2">
-              <ViewModeSwitcher 
+              <ViewModeSwitcher
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
               />
             </div>
           </div>
         </div>
-        
-        <ContractsList 
+
+        <ContractsList
           contracts={paginatedContracts}
           viewMode={viewMode}
           onViewContract={handleOpenDetails}
@@ -189,15 +189,15 @@ const ContractsPage: React.FC = () => {
             }, 100);
           }}
         />
-        
+
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-between items-center mt-6 border-t border-gray-200 pt-4">
+          <div className="flex justify-between items-center pt-4 mt-6 border-t border-gray-200">
             <div className="text-sm text-secondary-500">
               Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredContracts.length)} of {filteredContracts.length} contracts
             </div>
-            
-            <div className="flex items-center gap-2">
+
+            <div className="flex gap-2 items-center">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
@@ -205,20 +205,20 @@ const ContractsPage: React.FC = () => {
               >
                 Previous
               </button>
-              
+
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-md text-sm 
-                    ${currentPage === i + 1 
-                      ? 'bg-primary-500 text-white' 
+                  className={`w-8 h-8 flex items-center justify-center rounded-md text-sm
+                    ${currentPage === i + 1
+                      ? 'bg-primary-500 text-white'
                       : 'text-secondary-700 hover:bg-gray-100'}`}
                 >
                   {i + 1}
                 </button>
               ))}
-              
+
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
@@ -230,18 +230,18 @@ const ContractsPage: React.FC = () => {
           </div>
         )}
       </div>
-      
+
       {isAddModalOpen && (
-        <AddContractModal 
-          isOpen={isAddModalOpen} 
-          onClose={() => setIsAddModalOpen(false)} 
+        <AddContractModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
         />
       )}
-      
+
       {isDetailsModalOpen && selectedContract && (
-        <ContractDetailsModal 
-          isOpen={isDetailsModalOpen} 
-          onClose={() => setIsDetailsModalOpen(false)} 
+        <ContractDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
           onEdit={openEditContractForm}
           contract={selectedContract}
         />
@@ -259,7 +259,7 @@ const ContractsPage: React.FC = () => {
       />
 
       {/* Renter Form Modal */}
-      <RenterForm 
+      <RenterForm
         isOpen={isRenterFormOpen}
         onClose={closeRenterForm}
         onSubmit={handleAddRenter}
@@ -268,4 +268,4 @@ const ContractsPage: React.FC = () => {
   );
 };
 
-export default ContractsPage; 
+export default ContractsPage;
