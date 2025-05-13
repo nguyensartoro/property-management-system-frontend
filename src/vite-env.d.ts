@@ -1,5 +1,15 @@
 /// <reference types="vite/client" />
 
+interface ImportMetaEnv {
+  readonly VITE_GRAPHQL_URL: string
+  readonly VITE_API_URL: string
+  // more env variables...
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
+
 declare module 'react' {
   import * as React from 'react';
   export = React;
@@ -36,4 +46,7 @@ declare module 'lucide-react' {
   export const Pencil: FC<IconProps>;
   export const FileText: FC<IconProps>;
   export const Info: FC<IconProps>;
+  export const Wallet: FC<IconProps>;
+  export const Send: FC<IconProps>;
+  export const Building2: FC<IconProps>;
 }

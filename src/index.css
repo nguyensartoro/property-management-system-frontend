@@ -4,118 +4,178 @@
 
 @layer base {
   :root {
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 355.7 100% 97.3%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 48 96% 89%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262.1 83.3% 57.8%;
+
     --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 263.4 70% 50.4%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144.9 80.4% 10%;
+
+    --warning: 48 96% 89%;
+    --warning-foreground: 38 92% 50%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 263.4 70% 50.4%;
+  }
+
+  * {
+    @apply border-border;
   }
 
   html {
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply bg-background text-secondary-900 antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
-    line-height: 1.5;
-    color: var(--secondary-900, #1f2937);
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium text-secondary-900;
+    @apply font-medium text-foreground;
     line-height: 1.25;
   }
 
-  h1 { font-size: 2rem; }
-  h2 { font-size: 1.5rem; }
-  h3 { font-size: 1.25rem; }
-  h4 { font-size: 1.125rem; }
-  h5 { font-size: 1rem; }
-  h6 { font-size: 0.875rem; }
+  h1 { @apply text-4xl font-bold tracking-tight; }
+  h2 { @apply text-3xl font-semibold tracking-tight; }
+  h3 { @apply text-2xl font-semibold tracking-tight; }
+  h4 { @apply text-xl font-semibold tracking-tight; }
+  h5 { @apply text-lg font-semibold; }
+  h6 { @apply text-base font-semibold; }
 
-  p, li, input, textarea, button, select {
-    font-size: 1rem;
+  p { @apply text-base leading-7; }
+}
+
+@layer components {
+  .sidebar-item {
+    @apply flex gap-3 items-center p-3 rounded-md transition-all duration-200 text-muted-foreground hover:bg-accent hover:text-accent-foreground;
   }
 
-  small {
-    font-size: 0.875rem;
+  .sidebar-item.active {
+    @apply font-medium bg-primary/10 text-primary;
+  }
+
+  .dashboard-card {
+    @apply p-6 rounded-xl border shadow-sm bg-card text-card-foreground;
+  }
+
+  .btn {
+    @apply inline-flex justify-center items-center px-4 py-2 text-sm font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply text-white shadow bg-primary hover:bg-primary/90;
+  }
+
+  .btn-outline {
+    @apply border shadow-sm border-input bg-background hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .btn-danger {
+    @apply shadow-sm bg-destructive text-destructive-foreground hover:bg-destructive/90;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-md border transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+
+  .badge-success {
+    @apply border-transparent bg-success/10 text-success;
+  }
+
+  .badge-warning {
+    @apply border-transparent bg-warning/10 text-warning;
+  }
+
+  .badge-danger {
+    @apply border-transparent bg-destructive/10 text-destructive;
+  }
+
+  .badge-neutral {
+    @apply border-transparent bg-secondary text-secondary-foreground;
+  }
+
+  .data-table {
+    @apply w-full border-collapse border-spacing-0;
+  }
+
+  .data-table th {
+    @apply h-10 px-4 text-left align-middle text-xs font-medium text-muted-foreground bg-muted/50 [&:has([role=checkbox])]:pr-0;
+  }
+
+  .data-table td {
+    @apply p-4 align-middle text-sm [&:has([role=checkbox])]:pr-0;
+  }
+
+  .data-table tr {
+    @apply border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted;
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
-  }
-}
-
-@layer components {
-  .sidebar-item {
-    @apply flex items-center gap-3 p-3 rounded-md text-secondary-500 hover:bg-primary-50 hover:text-primary-600 transition-all duration-200;
-  }
-
-  .sidebar-item.active {
-    @apply bg-primary-50 text-primary-600 font-medium;
-  }
-
-  .dashboard-card {
-    @apply bg-white p-6 rounded-xl shadow-sm;
-  }
-
-  .btn {
-    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
-  }
-
-  .btn-primary {
-    @apply bg-primary-500 text-white hover:bg-primary-600;
-  }
-
-  .btn-outline {
-    @apply border border-primary-200 text-primary-700 hover:bg-primary-50;
-  }
-
-  .btn-danger {
-    @apply bg-danger-400 text-white hover:bg-danger-500;
-  }
-
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-
-  .badge-success {
-    @apply bg-success-400/10 text-success-500;
-  }
-
-  .badge-warning {
-    @apply bg-warning-400/10 text-warning-400;
-  }
-
-  .badge-danger {
-    @apply bg-danger-400/10 text-danger-400;
-  }
-
-  .badge-neutral {
-    @apply bg-secondary-200 text-secondary-700;
-  }
-
-  /* Consistent table styling for all pages */
-  .data-table {
-    @apply min-w-full divide-y divide-gray-200;
-  }
-
-  .data-table th {
-    @apply px-4 py-3 text-xs font-medium tracking-wider text-left uppercase text-secondary-500 bg-gray-50;
-  }
-
-  .data-table td {
-    @apply px-4 py-3 text-sm text-secondary-900;
-  }
-
-  .data-table tr {
-    @apply hover:bg-gray-50;
-  }
-
-  .data-table tr:not(:last-child) {
-    @apply border-b border-gray-200;
   }
 }
 

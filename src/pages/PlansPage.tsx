@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import { Check } from 'lucide-react';
-import { toast } from '../ui/toast';
+import { toast } from 'react-hot-toast';
 
 interface Plan {
   id: string;
@@ -13,7 +13,7 @@ interface Plan {
 }
 
 const PlansPage: React.FC = () => {
-  const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
+  const [billing, setBilling] = React.useState<'monthly' | 'yearly'>('monthly');
 
   const plans: Plan[] = [
     {
@@ -89,9 +89,7 @@ const PlansPage: React.FC = () => {
   ];
 
   const handleSubscribe = (plan: Plan) => {
-    toast.success('Plan Selected', {
-      description: `You've selected the ${plan.title} plan. Redirecting to payment...`,
-    });
+    toast.success(`You've selected the ${plan.title} plan. Redirecting to payment...`);
   };
 
   return (
@@ -181,9 +179,7 @@ const PlansPage: React.FC = () => {
         </p>
         <button
           onClick={() => 
-            toast.info('Contact Request', {
-              description: 'Our sales team will contact you shortly.'
-            })
+            toast.success('Our sales team will contact you shortly.')
           }
           className="inline-flex items-center px-4 py-2 border border-primary-500 text-primary-500 rounded-md hover:bg-primary-50 text-sm font-medium"
         >

@@ -1,9 +1,7 @@
 import React from 'react';
-import { X, Phone, Edit } from 'lucide-react';
-import { Service } from '../../types';
-import { motion } from 'framer-motion';
-import StatusBadge from '../shared/StatusBadge';
-import { useToastHook } from '../../utils/useToast';
+import { Edit, Check, X, Zap, Droplets, Wifi, Brush, Wrench, Shield, Scissors, Tv, Truck, Trash2, Settings, ShowerHead, Fan, Heart } from 'lucide-react';
+import Modal from '../shared/Modal';
+import { Service } from '../../interface/interfaces';
 
 interface ServiceDetailModalProps {
   isOpen: boolean;
@@ -12,132 +10,103 @@ interface ServiceDetailModalProps {
   onEdit: (service: Service) => void;
 }
 
-const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
-  isOpen,
-  onClose,
-  service,
-  onEdit,
-}) => {
-  const toast = useToastHook();
+// Map of service icon names to their corresponding components
+const serviceIconMap = {
+  'electricity': <Zap size={24} className="text-primary-500" />,
+  'water': <Droplets size={24} className="text-primary-500" />,
+  'internet': <Wifi size={24} className="text-primary-500" />,
+  'cleaning': <Brush size={24} className="text-primary-500" />,
+  'maintenance': <Wrench size={24} className="text-primary-500" />,
+  'security': <Shield size={24} className="text-primary-500" />,
+  'laundry': <Scissors size={24} className="text-primary-500" />,
+  'tv': <Tv size={24} className="text-primary-500" />,
+  'garbage': <Trash2 size={24} className="text-primary-500" />,
+  'shower': <ShowerHead size={24} className="text-primary-500" />,
+  'fan': <Fan size={24} className="text-primary-500" />,
+  'health': <Heart size={24} className="text-primary-500" />,
+  'moving': <Truck size={24} className="text-primary-500" />,
+  'other': <Settings size={24} className="text-primary-500" />,
+  
+  // Legacy icon names for backward compatibility
+  'zap': <Zap size={24} className="text-primary-500" />,
+  'droplets': <Droplets size={24} className="text-primary-500" />,
+  'wifi': <Wifi size={24} className="text-primary-500" />,
+  'brush': <Brush size={24} className="text-primary-500" />,
+  'wrench': <Wrench size={24} className="text-primary-500" />,
+  'shield': <Shield size={24} className="text-primary-500" />,
+  'scissors': <Scissors size={24} className="text-primary-500" />,
+  'trash-2': <Trash2 size={24} className="text-primary-500" />,
+  'truck': <Truck size={24} className="text-primary-500" />
+};
+
+const ServiceDetailModal: React.FC<ServiceDetailModalProps> = (props: ServiceDetailModalProps) => {
+  const { isOpen, onClose, service, onEdit } = props;
 
   if (!isOpen || !service) return null;
 
   const getServiceIcon = (iconName: string) => {
-    // Return a simple div with the icon name as we don't have access to dynamic icons
-    return (
-      <div className="flex justify-center items-center w-6 h-6">
-        <span className="text-primary-500" title={iconName}>
-          {iconName.charAt(0).toUpperCase() + iconName.slice(1)}
-        </span>
-      </div>
-    );
+    // Return the icon if it exists in the map, otherwise return a default icon
+    return serviceIconMap[iconName] || <Settings size={24} className="text-primary-500" />;
   };
 
   const handleEdit = () => {
     onEdit(service);
-    toast.info('Edit Service', {
-      description: `Editing service: ${service.name}`
-    });
-    onClose();
   };
 
   return (
-    <div className={`fixed inset-0 z-50 overflow-y-auto ${isOpen ? 'block' : 'hidden'}`}>
-      <div className="flex justify-center items-center p-4 min-h-screen">
-        <div className="fixed inset-0 transition-opacity bg-black/50" onClick={onClose}></div>
-
-        <motion.div
-          className="overflow-hidden relative w-full max-w-md bg-white rounded-lg shadow-xl dark:bg-gray-800"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-        >
-          {/* Header */}
-          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-semibold text-secondary-900 dark:text-white">Service Details</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              aria-label="Close"
-            >
-              <X size={20} />
-            </button>
+    <Modal isOpen={isOpen} onClose={onClose} title="Service Details" size="md">
+      <div className="p-6 min-w-[680px]">
+        <div className="flex gap-4 items-start mb-6">
+          <div className="p-3 rounded-full bg-primary-50 dark:bg-gray-700">
+            {getServiceIcon(service.icon)}
           </div>
-
-          {/* Content */}
-          <div className="p-6">
-            <div className="flex gap-4 items-start mb-6">
-              <div className="p-3 rounded-full bg-primary-50 dark:bg-gray-700">
-                {getServiceIcon(service.icon)}
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-secondary-900 dark:text-white">{service.name}</h4>
-                <div className="flex items-center mt-1">
-                  <span className="font-medium text-secondary-900 dark:text-white">${service.fee}</span>
-                  <span className="ml-1 text-sm text-gray-500 dark:text-gray-400">/ {service.feeType}</span>
-                  {service.availableRooms && (
-                    <div className="ml-3">
-                      <StatusBadge status={`${service.availableRooms} rooms`} size="sm" />
-                    </div>
-                  )}
-                </div>
-              </div>
+          <div>
+            <h4 className="text-lg font-semibold text-secondary-900 dark:text-white">{service.name}</h4>
+            <div className="flex items-center mt-1">
+              <span className="font-medium text-secondary-900 dark:text-white">${service.fee}</span>
+              <span className="ml-1 text-sm text-gray-500 dark:text-gray-400">/ {service.feeType}</span>
             </div>
-
-            <div className="space-y-5">
-              {/* Information Section */}
-              <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
-                <h5 className="mb-2 font-medium text-secondary-900 dark:text-white">Information</h5>
-                <p className="text-secondary-700 dark:text-gray-300">
-                  {service.information || 'No additional information available for this service.'}
-                </p>
-              </div>
-
-              {/* Contact Information */}
-              {service.phone && (
-                <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
-                  <h5 className="mb-2 font-medium text-secondary-900 dark:text-white">Contact Information</h5>
-                  <div className="flex items-center text-secondary-700 dark:text-gray-300">
-                    <Phone size={16} className="mr-2 text-primary-500" />
-                    <span>{service.phone}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Usage Statistics - if available */}
-              {service.availableRooms && (
-                <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
-                  <h5 className="mb-2 font-medium text-secondary-900 dark:text-white">Availability</h5>
-                  <p className="text-secondary-700 dark:text-gray-300">
-                    This service is available in {service.availableRooms} rooms.
-                  </p>
-                </div>
+            <div className="flex items-center mt-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Status:</span>
+              {service.active ? (
+                <span className="flex items-center text-green-500">
+                  <Check size={16} className="mr-1" /> Active
+                </span>
+              ) : (
+                <span className="flex items-center text-red-500">
+                  <X size={16} className="mr-1" /> Inactive
+                </span>
               )}
             </div>
           </div>
-
-          {/* Footer */}
-          <div className="flex gap-3 justify-end px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-secondary-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              onClick={handleEdit}
-              className="flex gap-2 items-center px-4 py-2 text-white rounded-md bg-primary-500 hover:bg-primary-600"
-            >
-              <Edit size={16} />
-              Edit Service
-            </button>
+        </div>
+        <div className="space-y-5">
+          <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
+            <h5 className="mb-2 font-medium text-secondary-900 dark:text-white">Description</h5>
+            <p className="text-secondary-700 dark:text-gray-300">
+              {service.description || 'No description available for this service.'}
+            </p>
           </div>
-        </motion.div>
+        </div>
+        <div className="flex gap-3 justify-end pt-4 mt-8 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-md border border-gray-300 text-secondary-700 hover:bg-gray-50"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={handleEdit}
+            className="flex gap-2 items-center px-4 py-2 text-white rounded-md bg-primary-500 hover:bg-primary-600"
+          >
+            <Edit size={16} />
+            Edit Service
+          </button>
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

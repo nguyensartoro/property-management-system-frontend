@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
-import { useToastHook } from '../../utils/useToast';
+import { toast } from 'react-hot-toast';
 import { Calendar as CalendarComponent } from '../ui/calendar';
 
 interface Room {
@@ -45,7 +45,6 @@ const ContractForm: React.FC<ContractFormProps> = ({
   renters,
   onSubmit,
 }) => {
-  const toast = useToastHook();
   const isEditMode = !!existingContract;
 
   const [roomSelectionOpen, setRoomSelectionOpen] = useState(false);
@@ -144,37 +143,27 @@ const ContractForm: React.FC<ContractFormProps> = ({
     e.preventDefault();
 
     if (!selectedRoomId) {
-      toast.error("Error", {
-        description: "Please select a room"
-      });
+      toast.error("Please select a room");
       return;
     }
 
     if (selectedRenterIds.length === 0) {
-      toast.error("Error", {
-        description: "Please select at least one renter"
-      });
+      toast.error("Please select at least one renter");
       return;
     }
 
     if (!startDate) {
-      toast.error("Error", {
-        description: "Please select a start date"
-      });
+      toast.error("Please select a start date");
       return;
     }
 
     if (!endDate) {
-      toast.error("Error", {
-        description: "Please select an end date"
-      });
+      toast.error("Please select an end date");
       return;
     }
 
     if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Error", {
-        description: "Please enter a valid amount"
-      });
+      toast.error("Contract amount must be greater than 0.");
       return;
     }
 
@@ -200,6 +189,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
 
     onSubmit(newContract);
     onClose();
+    toast.success("Contract information saved successfully.");
   };
 
   if (!isOpen) return null;

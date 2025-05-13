@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import { Calendar } from './ui/calendar';
-import { toast } from './ui/toast';
+import { toast } from 'react-hot-toast';
 
 const CalendarDemo: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    toast({
-      title: "Date Selected",
-      description: `You selected ${date.toLocaleDateString()}`,
-    });
+    toast.success(`Date Selected: You selected ${date.toLocaleDateString()}`);
   };
 
   return (

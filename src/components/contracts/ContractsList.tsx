@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 // import { useNavigate } from 'react-router-dom';
 import ContractCard from './ContractCard';
 import StatusBadge from '../shared/StatusBadge';
-import { useToastHook } from '../../utils/useToast';
+import { toast } from 'react-hot-toast';
+import { Edit, Info } from 'lucide-react';
 
 interface Contract {
   id: string;
@@ -32,7 +33,6 @@ const ContractsList: React.FC<ContractsListProps> = ({
   onEditContract
 }: ContractsListProps) => {
   // const navigate = useNavigate();
-  const toast = useToastHook();
 
   const handleViewContract = (contractId: string): void => {
     const contract = contracts.find((c: Contract) => c.id === contractId);
@@ -40,9 +40,7 @@ const ContractsList: React.FC<ContractsListProps> = ({
       if (onViewContract) {
         onViewContract(contract);
       } else {
-        toast.info('Contract Details', {
-          description: `Viewing details for contract ID: ${contractId}`
-        });
+        toast.success('Viewing details for contract');
         // navigate(`/contracts/${contractId}`);
       }
     }
@@ -54,9 +52,7 @@ const ContractsList: React.FC<ContractsListProps> = ({
       if (onEditContract) {
         onEditContract(contract);
       } else {
-        toast.info('Edit Contract', {
-          description: `Editing contract ID: ${contractId}`
-        });
+        toast.success('Editing contract');
         // navigate(`/contracts/edit/${contractId}`);
       }
     }
@@ -124,17 +120,17 @@ const ContractsList: React.FC<ContractsListProps> = ({
                 <div className="flex gap-2 justify-end">
                   <button
                     onClick={() => handleViewContract(contract.id)}
-                    className="transition-colors text-secondary-500 hover:text-primary-500"
+                    className="p-1 transition-colors text-secondary-500 hover:text-primary-500"
                     aria-label="View details"
                   >
-                    View
+                    <Info size={18} />
                   </button>
                   <button
                     onClick={() => handleEditContract(contract.id)}
-                    className="transition-colors text-secondary-500 hover:text-primary-500"
+                    className="p-1 transition-colors text-secondary-500 hover:text-primary-500"
                     aria-label="Edit contract"
                   >
-                    Edit
+                    <Edit size={18} />
                   </button>
                 </div>
               </td>

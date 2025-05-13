@@ -1,8 +1,6 @@
 import React from 'react';
-import { Doughnut } from 'react-chartjs-2';
-import { ArrowUpRight, Shield, WifiIcon, Droplets, Zap } from 'lucide-react';
-import { Service } from '../../types';
-import { services } from '../../data/mockData';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { ArrowUpRight, Shield, Wifi, Droplet, Zap } from 'lucide-react';
 
 interface ServiceUsage {
   name: string;
@@ -19,7 +17,7 @@ const ServicesStats: React.FC = () => {
       name: 'Internet',
       count: 42,
       percentage: 84,
-      icon: <WifiIcon size={18} className="text-purple-500" />,
+      icon: <Wifi size={18} className="text-purple-500" />,
       color: '#9333ea'
     },
     {
@@ -33,7 +31,7 @@ const ServicesStats: React.FC = () => {
       name: 'Water',
       count: 46,
       percentage: 92,
-      icon: <Droplets size={18} className="text-blue-500" />,
+      icon: <Droplet size={18} className="text-blue-500" />,
       color: '#3b82f6'
     },
     {
@@ -46,89 +44,75 @@ const ServicesStats: React.FC = () => {
   ];
 
   // Chart data
-  const chartData = {
-    labels: serviceUsageData.map(service => service.name),
-    datasets: [
-      {
-        data: serviceUsageData.map(service => service.count),
-        backgroundColor: serviceUsageData.map(service => service.color),
-        borderWidth: 0,
-        hoverOffset: 5,
-      },
-    ],
-  };
-
-  // Chart options
-  const chartOptions = {
-    cutout: '70%',
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context: any) {
-            const label = context.label || '';
-            const value = context.raw || 0;
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = Math.round((value / total) * 100);
-            return `${label}: ${value} units (${percentage}%)`;
-          }
-        }
-      }
-    },
-    maintainAspectRatio: false,
-  };
+  const chartData = serviceUsageData.map(service => ({
+    name: service.name,
+    value: service.count,
+    color: service.color,
+  }));
 
   // Calculate total units with services
   const totalUnits = 50; // This would come from your data source
-  const servicesMostPopular = serviceUsageData.reduce((prev, current) => 
+  const servicesMostPopular = serviceUsageData.reduce((prev, current) =>
     (prev.count > current.count) ? prev : current
   );
 
   return (
-    <div className="dashboard-card h-full">
+    <div className="h-full dashboard-card">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-secondary-900">Services Usage</h3>
-        <button className="text-primary-500 hover:text-primary-600 text-sm flex items-center gap-1">
+        <button className="flex gap-1 items-center text-sm text-primary-500 hover:text-primary-600">
           View Details <ArrowUpRight size={14} />
         </button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="flex flex-col items-center justify-center h-64">
-          <div className="relative w-full h-full flex items-center justify-center">
-            <Doughnut data={chartData} options={chartOptions} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="flex flex-col justify-center items-center h-64">
+          <div className="flex relative justify-center items-center w-full h-full">
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={70}
+                  label={({ name, percent }: { name: string; percent: number }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="flex absolute inset-0 flex-col justify-center items-center pointer-events-none">
               <span className="text-2xl font-bold text-secondary-900">{totalUnits}</span>
               <span className="text-sm text-secondary-500">Total Units</span>
             </div>
           </div>
         </div>
-
         <div className="flex flex-col justify-between">
           <div>
-            <p className="text-secondary-500 text-sm mb-3">Most popular service</p>
-            <div className="flex items-center gap-2 mb-4">
+            <p className="mb-3 text-sm text-secondary-500">Most popular service</p>
+            <div className="flex gap-2 items-center mb-4">
               {servicesMostPopular.icon}
               <span className="font-medium text-secondary-900">{servicesMostPopular.name}</span>
               <span className="text-sm text-secondary-500">({servicesMostPopular.percentage}% of units)</span>
             </div>
           </div>
-
           <div className="space-y-3">
-            <p className="text-secondary-500 text-sm mb-1">Top services by usage</p>
+            <p className="mb-1 text-sm text-secondary-500">Top services by usage</p>
             {serviceUsageData.map((service, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div key={index} className="flex justify-between items-center">
+                <div className="flex gap-2 items-center">
                   {service.icon}
                   <span className="text-secondary-900">{service.name}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="h-2 rounded-full" 
-                      style={{ 
+                <div className="flex gap-2 items-center">
+                  <div className="w-24 h-2 bg-gray-200 rounded-full">
+                    <div
+                      className="h-2 rounded-full"
+                      style={{
                         width: `${service.percentage}%`,
                         backgroundColor: service.color
                       }}
@@ -145,4 +129,4 @@ const ServicesStats: React.FC = () => {
   );
 };
 
-export default ServicesStats; 
+export default ServicesStats;

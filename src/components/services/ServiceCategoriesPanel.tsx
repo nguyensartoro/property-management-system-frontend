@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, X, Edit, Trash2 } from 'lucide-react';
-import { useToastHook } from '../../utils/useToast';
+import { toast } from 'react-hot-toast';
 
 interface ServiceCategory {
   id: string;
@@ -17,7 +17,6 @@ const ServiceCategoriesPanel: React.FC<ServiceCategoriesPanelProps> = ({
   expanded, 
   onClose 
 }) => {
-  const toast = useToastHook();
   const [categories, setCategories] = useState<ServiceCategory[]>([
     { id: '1', name: 'Utilities', description: 'Basic utilities like water, electricity, and gas' },
     { id: '2', name: 'Maintenance', description: 'Property upkeep and repairs' },

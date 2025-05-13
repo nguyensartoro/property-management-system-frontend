@@ -1,7 +1,7 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import ActionCard from '../shared/ActionCard';
-import { toast } from '../ui/toast';
+import { toast } from 'react-hot-toast';
 
 interface RenterCardProps {
   renter: {
@@ -9,11 +9,14 @@ interface RenterCardProps {
     name: string;
     email: string;
     phone: string;
-    unitId?: string;
-    unitName?: string;
-    moveInDate?: string;
-    status?: string;
-    paymentStatus?: string;
+    roomId?: string;
+    emergencyContact?: string;
+    identityNumber?: string;
+    room?: {
+      id: string;
+      number: string;
+      name: string;
+    };
   };
   onEdit?: () => void;
   onView?: () => void;
@@ -22,12 +25,10 @@ interface RenterCardProps {
 
 const RenterCard: React.FC<RenterCardProps> = ({ renter, onEdit, onView, viewMode = 'grid' }) => {
   const handleDelete = () => {
-    toast.success('Renter deleted successfully', {
-      description: `${renter.name} has been removed from the system.`
-    });
+    toast.success('Renter deleted successfully');
   };
 
-  const isActive = renter.unitId && renter.unitId.length > 0;
+  const isActive = renter.roomId && renter.roomId.length > 0;
 
   return (
     <ActionCard
@@ -57,10 +58,12 @@ const RenterCard: React.FC<RenterCardProps> = ({ renter, onEdit, onView, viewMod
         </div>
 
         <div className="flex justify-between">
-          {renter.unitId ? (
+          {renter.roomId ? (
             <div>
               <span className="text-xs text-secondary-500 block mb-1">Room</span>
-              <span className="text-secondary-900">{renter.unitName || `Room ${renter.unitId}`}</span>
+              <span className="text-secondary-900">
+                {renter.room ? `${renter.room.number} - ${renter.room.name}` : `Room ${renter.roomId}`}
+              </span>
             </div>
           ) : (
             <div>
@@ -69,26 +72,18 @@ const RenterCard: React.FC<RenterCardProps> = ({ renter, onEdit, onView, viewMod
             </div>
           )}
           
-          {renter.moveInDate && (
+          {renter.emergencyContact && (
             <div className="text-right">
-              <span className="text-xs text-secondary-500 block mb-1">Move In</span>
-              <span className="text-secondary-900">{renter.moveInDate}</span>
+              <span className="text-xs text-secondary-500 block mb-1">Emergency</span>
+              <span className="text-secondary-900">{renter.emergencyContact}</span>
             </div>
           )}
         </div>
         
-        {renter.paymentStatus && (
+        {renter.identityNumber && (
           <div>
-            <span className="text-xs text-secondary-500 block mb-1">Payment Status</span>
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              renter.paymentStatus === 'Paid' 
-              ? 'bg-success-100 text-success-700' 
-              : renter.paymentStatus === 'Pending'
-              ? 'bg-warning-100 text-warning-700'
-              : 'bg-danger-100 text-danger-700'
-            }`}>
-              {renter.paymentStatus}
-            </span>
+            <span className="text-xs text-secondary-500 block mb-1">ID Number</span>
+            <span className="text-secondary-900">{renter.identityNumber}</span>
           </div>
         )}
       </div>

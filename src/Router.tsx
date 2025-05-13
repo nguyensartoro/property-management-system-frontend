@@ -1,80 +1,66 @@
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+// import { AnimatePresence } from 'framer-motion';
 import Layout from './components/layout/Layout';
-import DashboardPage from './components/dashboard/DashboardPage';
-import RoomsPage from './components/rooms/RoomsPage';
-import RentersPage from './components/renters/RentersPage';
-import AnalyticsPage from './components/analytics/AnalyticsPage';
-import ServicesPage from './components/services/ServicesPage';
-import MessagesPage from './components/messages/MessagesPage';
-import SettingsPage from './components/settings/SettingsPage';
-import ContractsPage from './components/contracts/ContractsPage';
-import CalendarDemo from './components/CalendarDemo';
-import PageTransition from './components/shared/PageTransition';
-import PlansPage from './components/plans/PlansPage';
 
-const Router = () => {
+import { useAuthStore } from './store/authStore';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import DashboardPage from './pages/DashboardPage';
+import RoomsPage from './pages/RoomsPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import RentersPage from './pages/RentersPage';
+import ServicesPage from './pages/ServicesPage';
+import ContractsPage from './pages/ContractsPage';
+import MessagesPage from './pages/MessagesPage';
+import SettingsPage from './pages/SettingsPage';
+import CalendarDemo from './components/CalendarDemo';
+import PlansPage from './pages/PlansPage';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+import NotFoundPage from './pages/NotFoundPage';
+
+const Router: React.FC = () => {
   const location = useLocation();
-  
+  const { isAuthenticated, loading } = useAuthStore();
+
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+    <Routes location={location} key={location.pathname}>
+      {/* Public routes */}
+      <Route path="/login" element={
+        loading ? (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="w-8 h-8 border-4 border-primary-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />
+      } />
+      <Route path="/register" element={
+        loading ? (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="w-8 h-8 border-4 border-primary-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />
+      } />
+
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Layout />}>
-          <Route index element={
-            <PageTransition>
-              <DashboardPage />
-            </PageTransition>
-          } />
-          <Route path="rooms" element={
-            <PageTransition>
-              <RoomsPage />
-            </PageTransition>
-          } />
-          <Route path="renters" element={
-            <PageTransition>
-              <RentersPage />
-            </PageTransition>
-          } />
-          <Route path="analytics" element={
-            <PageTransition>
-              <AnalyticsPage />
-            </PageTransition>
-          } />
-          <Route path="services" element={
-            <PageTransition>
-              <ServicesPage />
-            </PageTransition>
-          } />
-          <Route path="messages" element={
-            <PageTransition>
-              <MessagesPage />
-            </PageTransition>
-          } />
-          <Route path="settings" element={
-            <PageTransition>
-              <SettingsPage />
-            </PageTransition>
-          } />
-          <Route path="contracts" element={
-            <PageTransition>
-              <ContractsPage />
-            </PageTransition>
-          } />
-          <Route path="plans" element={
-            <PageTransition>
-              <PlansPage />
-            </PageTransition>
-          } />
-          <Route path="calendar-demo" element={
-            <PageTransition>
-              <CalendarDemo />
-            </PageTransition>
-          } />
+          <Route index element={<DashboardPage />} />
+          <Route path="rooms" element={<RoomsPage />} />
+          <Route path="renters" element={<RentersPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="services" element={<ServicesPage />} />
+          <Route path="messages" element={<MessagesPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="contracts" element={<ContractsPage />} />
+          <Route path="plans" element={<PlansPage />} />
+          <Route path="calendar-demo" element={<CalendarDemo />} />
         </Route>
-      </Routes>
-    </AnimatePresence>
+      </Route>
+      
+      {/* 404 catch-all route */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 };
 
-export default Router; 
+export default Router;

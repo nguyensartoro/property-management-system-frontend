@@ -2,7 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import ActionCard from '../shared/ActionCard';
 import StatusBadge from '../shared/StatusBadge';
-import { useToastHook } from '../../utils/useToast';
+import { toast } from 'react-hot-toast';
 
 interface Contract {
   id: string;
@@ -29,12 +29,8 @@ const ContractCard: React.FC<ContractCardProps> = ({
   onEdit,
   onView
 }: ContractCardProps) => {
-  const toast = useToastHook();
-
   const handleDelete = () => {
-    toast.success('Contract deleted successfully', {
-      description: `Contract for Room ${contract.roomName} has been deleted.`
-    });
+    toast.success('Contract deleted successfully');
   };
 
   // Convert contract type to display format
@@ -53,30 +49,30 @@ const ContractCard: React.FC<ContractCardProps> = ({
     >
       <div className="space-y-3">
         <div>
-          <span className="block mb-1 text-xs text-secondary-500">Renters:</span>
-          <span className="text-sm font-medium text-secondary-900">
+          <span className="block mb-1 text-xs text-secondary-500 dark:text-gray-400">Renters:</span>
+          <span className="text-sm font-medium text-secondary-900 dark:text-gray-200">
             {contract.renterNames.join(', ')}
           </span>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="block mb-1 text-xs text-secondary-500">Start Date:</span>
-            <div className="text-sm font-medium text-secondary-900">{contract.startDate}</div>
+            <span className="block mb-1 text-xs text-secondary-500 dark:text-gray-400">Start Date:</span>
+            <div className="text-sm font-medium text-secondary-900 dark:text-gray-200">{contract.startDate}</div>
           </div>
           <div>
-            <span className="block mb-1 text-xs text-secondary-500">End Date:</span>
-            <div className="text-sm font-medium text-secondary-900">{contract.endDate}</div>
+            <span className="block mb-1 text-xs text-secondary-500 dark:text-gray-400">End Date:</span>
+            <div className="text-sm font-medium text-secondary-900 dark:text-gray-200">{contract.endDate}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="block mb-1 text-xs text-secondary-500">Type:</span>
+            <span className="block mb-1 text-xs text-secondary-500 dark:text-gray-400">Type:</span>
             <StatusBadge status={getContractTypeDisplay()} size="sm" />
           </div>
           <div>
-            <span className="block mb-1 text-xs text-secondary-500">Status:</span>
+            <span className="block mb-1 text-xs text-secondary-500 dark:text-gray-400">Status:</span>
             <StatusBadge status={contract.status} size="sm" />
           </div>
         </div>

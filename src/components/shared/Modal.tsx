@@ -35,20 +35,20 @@ const Modal: React.FC<ModalProps> = ({
           animate="visible"
           exit="exit"
           variants={modalBackdrop}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="flex fixed inset-0 z-50 justify-center items-center m-0 bg-black/50"
           onClick={onClose}
         >
           <motion.div
             variants={modalContent}
-            className={`bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden`}
+            className={`overflow-hidden w-full bg-white rounded-lg shadow-xl ${sizeClasses[size]} max-h-[90vh]`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
               <h3 className="text-xl font-semibold text-secondary-900">{title}</h3>
               {showCloseButton && (
                 <button
                   onClick={onClose}
-                  className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                  className="p-1 rounded-full transition-colors hover:bg-gray-100"
                   aria-label="Close"
                 >
                   <X size={20} className="text-secondary-500" />

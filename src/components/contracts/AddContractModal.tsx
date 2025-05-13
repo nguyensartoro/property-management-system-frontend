@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import Modal from '../shared/Modal';
-import { toast } from '../ui/toast';
+import { toast } from 'react-hot-toast';
 
 interface Room {
   id: string;
@@ -59,11 +59,7 @@ const AddContractModal: React.FC<AddContractModalProps> = ({ isOpen, onClose }) 
     // Here you would normally send this to an API
     console.log('Form submitted:', form);
     
-    toast({
-      title: 'Success',
-      description: 'Contract created successfully',
-      type: 'success',
-    });
+    toast.success('Contract created successfully');
     
     onClose();
   };

@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
-import { Eye, Edit, Trash2 } from 'lucide-react';
-
-type CardAction = {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  variant?: 'default' | 'danger' | 'primary';
-};
+import React from 'react';
+// @ts-expect-error: lucide-react icons are not typed in this version
+import Edit from 'lucide-react/dist/esm/icons/edit';
+// @ts-expect-error: lucide-react icons are not typed in this version
+import View from 'lucide-react/dist/esm/icons/view';
 
 export interface ActionCardProps {
   title: React.ReactNode;
-  subtitle?: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
-  actions?: CardAction[];
   onView?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -27,20 +21,20 @@ interface DeleteConfirmProps {
   itemName: string;
 }
 
-const DeleteConfirm: React.FC<DeleteConfirmProps> = ({ isOpen, onClose, onConfirm, itemName }) => {
+const DeleteConfirm: React.FC<DeleteConfirmProps> = ({ isOpen, onClose, onConfirm, itemName }: DeleteConfirmProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-        <h3 className="text-xl font-semibold text-secondary-900 mb-4">Confirm Deletion</h3>
-        <p className="text-secondary-700 mb-6">
+    <div className="flex fixed inset-0 z-50 justify-center items-center bg-black/50">
+      <div className="p-6 w-full max-w-md bg-white rounded-lg shadow-xl dark:bg-gray-800">
+        <h3 className="mb-4 text-xl font-semibold text-secondary-900 dark:text-gray-100">Confirm Deletion</h3>
+        <p className="mb-6 text-secondary-700 dark:text-gray-300">
           Are you sure you want to delete this {itemName}? This action cannot be undone.
         </p>
-        <div className="flex justify-end gap-3">
+        <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-200 rounded-md text-secondary-700 hover:bg-gray-50"
+            className="px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 text-secondary-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             Cancel
           </button>
@@ -49,7 +43,7 @@ const DeleteConfirm: React.FC<DeleteConfirmProps> = ({ isOpen, onClose, onConfir
               onConfirm();
               onClose();
             }}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+            className="px-4 py-2 text-white bg-red-500 rounded-md hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
           >
             Delete
           </button>
@@ -61,85 +55,53 @@ const DeleteConfirm: React.FC<DeleteConfirmProps> = ({ isOpen, onClose, onConfir
 
 const ActionCard: React.FC<ActionCardProps> = ({
   title,
-  subtitle,
   icon,
   children,
-  actions = [],
   onView,
   onEdit,
   onDelete,
   className = '',
-}) => {
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const defaultActions = [
-    ...(onView
-      ? [
-          {
-            icon: <Eye size={18} />,
-            label: 'View',
-            onClick: onView,
-            variant: 'default' as const,
-          },
-        ]
-      : []),
-    ...(onEdit
-      ? [
-          {
-            icon: <Edit size={18} />,
-            label: 'Edit',
-            onClick: onEdit,
-            variant: 'primary' as const,
-          },
-        ]
-      : []),
-    ...(onDelete
-      ? [
-          {
-            icon: <Trash2 size={18} />,
-            label: 'Delete',
-            onClick: () => setShowDeleteConfirm(true),
-            variant: 'danger' as const,
-          },
-        ]
-      : []),
-    ...actions,
-  ];
+}: ActionCardProps) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   const titleString = typeof title === 'string' ? title : 'Item';
 
   return (
     <>
-      <div className={`border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md transition-all ${className}`}>
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center group-hover:bg-primary-50 transition-colors">
-          <div className="flex items-center gap-2">
-            {icon && <span className="text-primary-500">{icon}</span>}
-            <div>
-              <span className="font-medium text-secondary-900">{title}</span>
-              {subtitle && <p className="text-xs text-secondary-500">{subtitle}</p>}
-            </div>
+      <div className={`overflow-hidden bg-white rounded-lg border border-gray-200 transition-all dark:border-gray-700 dark:bg-gray-800 hover:shadow-md ${className}`}>
+        <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200 transition-colors dark:border-gray-700 dark:bg-gray-900 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/20">
+          <div className="flex gap-2 items-center">
+            {icon && <span>{icon}</span>}
+            <span className="font-medium text-secondary-900 dark:text-gray-100">{title}</span>
           </div>
-          <div className="flex items-center">
-            {defaultActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={action.onClick}
-                className={`p-1.5 transition-colors ${
-                  action.variant === 'danger'
-                    ? 'text-secondary-500 hover:text-danger-500'
-                    : action.variant === 'primary'
-                    ? 'text-secondary-500 hover:text-primary-500'
-                    : 'text-secondary-500 hover:text-secondary-700'
-                }`}
-                aria-label={action.label}
-                title={action.label}
-              >
-                {action.icon}
-              </button>
-            ))}
+          <div className="grid grid-cols-2 gap-2 items-center min-w-[72px]">
+            {/* View Action */}
+            <button
+              onClick={onView}
+              disabled={!onView}
+              className={`p-1.5 transition-colors flex items-center justify-center rounded-md
+                ${onView ? 'text-secondary-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer' : 'text-secondary-300 dark:text-gray-600 cursor-not-allowed opacity-50'}`}
+              aria-label="View"
+              title="View"
+              type="button"
+            >
+              <View size={18} />
+            </button>
+            {/* Edit Action */}
+            <button
+              onClick={onEdit}
+              disabled={!onEdit}
+              className={`p-1.5 transition-colors flex items-center justify-center rounded-md
+                ${onEdit ? 'text-secondary-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer' : 'text-secondary-300 dark:text-gray-600 cursor-not-allowed opacity-50'}`}
+              aria-label="Edit"
+              title="Edit"
+              type="button"
+            >
+              <Edit size={18} />
+            </button>
           </div>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="p-4 dark:text-gray-200">{children}</div>
       </div>
 
       <DeleteConfirm
@@ -152,4 +114,4 @@ const ActionCard: React.FC<ActionCardProps> = ({
   );
 };
 
-export default ActionCard; 
+export default ActionCard;

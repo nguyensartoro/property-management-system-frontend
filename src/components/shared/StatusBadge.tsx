@@ -1,101 +1,74 @@
 import React from 'react';
 
-type StatusType = 
-  | 'Available' 
-  | 'Occupied' 
-  | 'Reserved' 
-  | 'Maintenance' 
-  | 'Active' 
-  | 'Inactive' 
-  | 'Pending'
-  | 'active'
-  | 'expired'
-  | 'terminated'
-  | 'Long Term'
-  | 'Short Term';
+type StatusType =
+  | 'AVAILABLE'
+  | 'OCCUPIED'
+  | 'RESERVED'
+  | 'MAINTENANCE'
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'PENDING'
+  | 'EXPIRED'
+  | 'TERMINATED'
+  | 'LONG TERM'
+  | 'SHORT TERM';
 
 interface StatusBadgeProps {
   status: StatusType;
   size?: 'sm' | 'md';
+  customClassName?: string;
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ 
-  status, 
-  size = 'md'
+const StatusBadge: React.FC<StatusBadgeProps> = ({
+  status,
+  size = 'md',
+  customClassName
 }: StatusBadgeProps) => {
-  const getStatusColor = () => {
+  const getStatusStyle = () => {
     switch (status) {
-      // Room statuses
-      case 'Available':
-      case 'Active':
-      case 'active':
-        return 'bg-success-400/10 text-success-500';
-      case 'Occupied':
-      case 'Inactive':
-      case 'terminated':
-        return 'bg-danger-400/10 text-danger-500';
-      case 'Reserved':
-      case 'Pending':
-      case 'expired':
-        return 'bg-warning-400/10 text-warning-500';
-      case 'Maintenance':
-        return 'bg-gray-100 text-gray-500';
-      
-      // Contract types
-      case 'Long Term':
-        return 'bg-blue-100 text-blue-700';
-      case 'Short Term':
-        return 'bg-purple-100 text-purple-700';
-      
+      case 'AVAILABLE':
+        return 'border-0 bg-[#388e3c] text-white'; // #green
+      case 'ACTIVE':
+        return 'border-0 bg-[#0dcfda] text-white'; // #turquoise
+      case 'OCCUPIED':
+        return 'border-0 bg-[#c1bec1] text-white'; // #clooney
+      case 'RESERVED':
+        return 'border-0 bg-[#f69833] text-white'; // #orange
+      case 'PENDING':
+        return 'border-0 bg-[#fecf33] text-white'; // #yellow
+      case 'EXPIRED':
+        return 'border-0 bg-[#554d56] text-white'; // #teflon
+      case 'MAINTENANCE':
+        return 'border-0 bg-[#979197] text-white'; // #gandalf
+      case 'TERMINATED':
+        return 'border-0 bg-[#ee6723] text-white'; // #peach
+      case 'INACTIVE':
+        return 'border-0 bg-[#c1bec1] text-white'; // #clooney
+      case 'LONG TERM':
+        return 'border-0 bg-[#419bf9] text-white'; // #cornflower-blue
+      case 'SHORT TERM':
+        return 'border-0 bg-[#fdbd39] text-white'; // #light-orange
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'border-0 bg-[#f7f7f7] text-gray-700'; // #whitey
     }
   };
 
-  const getDotColor = () => {
-    switch (status) {
-      // Room statuses
-      case 'Available':
-      case 'Active':
-      case 'active':
-        return 'bg-success-500';
-      case 'Occupied':
-      case 'Inactive':
-      case 'terminated':
-        return 'bg-danger-500';
-      case 'Reserved':
-      case 'Pending':
-      case 'expired':
-        return 'bg-warning-500';
-      case 'Maintenance':
-        return 'bg-gray-500';
-      
-      // Contract types
-      case 'Long Term':
-        return 'bg-blue-500';
-      case 'Short Term':
-        return 'bg-purple-500';
-      
-      default:
-        return 'bg-gray-500';
-    }
-  };
+  const sizeClasses = size === 'sm'
+    ? 'px-3 py-0.5 text-[10px] rounded-2xl'
+    : 'px-4 py-1 text-xs rounded-2xl';
 
-  const sizeClasses = size === 'sm' 
-    ? 'px-2 py-0.5 text-xs' 
-    : 'px-2.5 py-1 text-xs';
-
-  // Format status label
   const getDisplayLabel = () => {
-    if (status === 'active' || status === 'expired' || status === 'terminated') {
-      return status.charAt(0).toUpperCase() + status.slice(1);
-    }
-    return status;
+    return status.toUpperCase();
   };
 
   return (
-    <span className={`inline-flex items-center rounded-full font-medium ${getStatusColor()} ${sizeClasses}`}>
-      <span className={`rounded-full h-1.5 w-1.5 ${getDotColor()} mr-1.5`}></span>
+    <span
+      className={
+        customClassName
+          ? customClassName
+          : `inline-flex items-center font-bold tracking-wide uppercase border ${getStatusStyle()} ${sizeClasses}`
+      }
+    >
       {getDisplayLabel()}
     </span>
   );

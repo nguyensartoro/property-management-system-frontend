@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../shared/Modal';
 import { Wallet, Building2 } from 'lucide-react';
-import { toast } from '../ui/toast';
+import { toast } from 'react-hot-toast';
 
 interface PaymentMethodType {
   id: string;
@@ -39,21 +39,13 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
         ...newPaymentMethod.details
       });
       
-      toast({
-        title: 'Success',
-        description: 'Payment method added successfully',
-        type: 'success',
-      });
+      toast.success('Payment method added successfully');
       
       // Reset form and close modal
       setNewPaymentMethod({ type: '', details: {} });
       onClose();
     } else {
-      toast({
-        title: 'Error',
-        description: 'Please select a payment method type',
-        type: 'error',
-      });
+      toast.error('Please select a payment method type');
     }
   };
 

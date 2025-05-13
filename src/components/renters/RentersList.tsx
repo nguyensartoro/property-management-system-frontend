@@ -1,54 +1,60 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import RenterCard from './RenterCard';
 import StatusBadge from '../shared/StatusBadge';
-import { toast } from '../ui/toast';
+import Icon from '../shared/Icon';
+import { Edit, User, Info, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Renter {
   id: string;
   name: string;
   email: string;
   phone: string;
-  unitId?: string;
-  unitName?: string;
-  moveInDate?: string;
-  status?: string;
-  paymentStatus?: string;
+  roomId?: string;
+  emergencyContact?: string;
+  identityNumber?: string;
+  room?: {
+    id: string;
+    number: string;
+    name: string;
+  };
+  documents?: {
+    id: string;
+    name: string;
+    type: string;
+    path: string;
+  }[];
 }
 
 interface RentersListProps {
   renters: Renter[];
   viewMode: 'grid' | 'list';
+  onViewRenter: (renter: Renter) => void;
+  onEditRenter: (renter: Renter) => void;
+  onDeleteRenter: (renter: Renter) => void;
 }
 
-const RentersList: React.FC<RentersListProps> = ({ renters, viewMode }) => {
-  const navigate = useNavigate();
-
-  const handleViewRenter = (renterId: string) => {
-    toast.info('Renter Details', {
-      description: `Viewing details for renter ID: ${renterId}`
-    });
-    // navigate(`/renters/${renterId}`);
-  };
-
-  const handleEditRenter = (renterId: string) => {
-    toast.info('Edit Renter', {
-      description: `Editing renter ID: ${renterId}`
-    });
-    // navigate(`/renters/edit/${renterId}`);
-  };
+const RentersList: React.FC<RentersListProps> = (props: RentersListProps) => {
+  const { renters, viewMode, onViewRenter, onEditRenter, onDeleteRenter } = props;
 
   if (viewMode === 'grid') {
     return (
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {renters.map(renter => (
-          <RenterCard
+      <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'grid-cols-1 gap-4'}`}>
+        {renters.map((renter: Renter, index: number) => (
+          <motion.div
             key={renter.id}
-            renter={renter}
-            onView={() => handleViewRenter(renter.id)}
-            onEdit={() => handleEditRenter(renter.id)}
-            viewMode={viewMode}
-          />
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+          >
+            <RenterCard
+              renter={renter}
+              onView={() => onViewRenter(renter)}
+              onEdit={() => onEditRenter(renter)}
+              viewMode={viewMode}
+            />
+          </motion.div>
         ))}
       </div>
     );
@@ -69,39 +75,57 @@ const RentersList: React.FC<RentersListProps> = ({ renters, viewMode }) => {
           </tr>
         </thead>
         <tbody>
-          {renters.map(renter => (
-            <tr key={renter.id}>
-              <td className="font-medium">{renter.name}</td>
+          {renters.map((renter: Renter, index: number) => (
+            <motion.tr
+              key={renter.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+            >
+              <td className="font-medium flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <User size={18} className="text-gray-400" />
+                </span>
+                {renter.name}
+              </td>
               <td className="text-secondary-500">{renter.email}</td>
               <td className="text-secondary-500">{renter.phone}</td>
               <td>
-                <StatusBadge 
-                  status={renter.unitId ? 'Active' : 'Inactive'} 
-                  size="sm" 
+                <StatusBadge
+                  status={renter.roomId ? 'Active' : 'Inactive'}
+                  size="sm"
                 />
               </td>
               <td className="text-secondary-500">
-                {renter.unitName || (renter.unitId ? `Room ${renter.unitId}` : 'Not Assigned')}
+                {renter.room ? `${renter.room.number} - ${renter.room.name}` : 'Not Assigned'}
               </td>
               <td className="text-right">
                 <div className="flex gap-2 justify-end">
                   <button
-                    onClick={() => handleViewRenter(renter.id)}
+                    onClick={() => onViewRenter(renter)}
                     className="transition-colors text-secondary-500 hover:text-primary-500"
-                    aria-label="View details"
+                    aria-label="View renter details"
                   >
-                    View
+                    <Icon icon={Info} size={18} />
                   </button>
                   <button
-                    onClick={() => handleEditRenter(renter.id)}
+                    onClick={() => onEditRenter(renter)}
                     className="transition-colors text-secondary-500 hover:text-primary-500"
                     aria-label="Edit renter"
                   >
-                    Edit
+                    <Icon icon={Edit} size={18} />
+                  </button>
+                  <button
+                    onClick={() => onDeleteRenter(renter)}
+                    className="transition-colors text-secondary-500 hover:text-danger-500"
+                    aria-label="Delete renter"
+                  >
+                    <Icon icon={Trash2} size={18} />
                   </button>
                 </div>
               </td>
-            </tr>
+            </motion.tr>
           ))}
         </tbody>
       </table>

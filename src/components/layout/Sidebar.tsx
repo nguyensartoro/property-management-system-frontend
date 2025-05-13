@@ -1,147 +1,150 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+/** @jsxImportSource react */
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
   Home,
-  Users,
-  BarChart3,
-  Package2,
-  MessageSquare,
+  User,
   Settings,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
   FileText,
-  Calendar,
-  CreditCard
+  List,
+  Grid,
+  Mail,
+  Plus,
+  ChevronUp,
+  ChevronDown,
+  X,
+  Wallet
 } from 'lucide-react';
 import { Calendar as CalendarComponent } from '../ui/calendar';
+import { useLanguage } from '../../utils/languageContext';
 
-const Sidebar: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date());
+interface NavigationItem {
+  href: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  label: string;
+}
+
+interface SidebarItemProps extends NavigationItem {
+  isCollapsed: boolean;
+}
+
+const Sidebar = () => {
+  const { t } = useLanguage();
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
+
+  // Updated navigation items with translated labels and Property page removed
+  const navigationItems: NavigationItem[] = [
+    { href: '/', icon: Home, label: t('navigation.dashboard') },
+    { href: '/rooms', icon: List, label: t('navigation.rooms') },
+    { href: '/renters', icon: User, label: t('navigation.renters') },
+    { href: '/contracts', icon: FileText, label: t('navigation.contracts') },
+    { href: '/services', icon: Grid, label: t('navigation.services') },
+    { href: '/analytics', icon: Grid, label: t('navigation.analytics') },
+    { href: '/messages', icon: Mail, label: 'Messages' },
+    { href: '/plans', icon: Plus, label: 'Plans' },
+    { href: '/calendar', icon: FileText, label: 'Calendar' },
+    { href: '/payments', icon: Wallet, label: 'Payments' },
+    { href: '/settings', icon: Settings, label: t('navigation.settings') }
+  ];
 
   return (
-    <aside
-      className={`h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300 sticky top-0 left-0 z-50
-        ${isCollapsed ? 'w-20' : 'w-64'}`}
-    >
-      <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <div className={`flex items-center gap-2 font-bold text-xl text-secondary-900 ${isCollapsed ? 'hidden' : 'flex'}`}>
-          <div className="grid grid-cols-2 gap-0.5">
-            <div className="w-3 h-3 rounded-sm bg-primary-400"></div>
-            <div className="w-3 h-3 rounded-sm bg-primary-400"></div>
-            <div className="w-3 h-3 rounded-sm bg-primary-400"></div>
-            <div className="w-3 h-3 rounded-sm bg-primary-400"></div>
-          </div>
-          <span>Lodgify</span>
-          <span className="text-xs bg-yellow-100 px-1.5 py-0.5 rounded-full text-yellow-800 font-normal ml-1">
-            v1.0
-          </span>
-        </div>
+    <div className={`
+      sticky top-0 h-screen flex flex-col
+      bg-white dark:bg-gray-900
+      border-r border-gray-200 dark:border-gray-800
+      ${isCollapsed ? 'w-16' : 'w-64'}
+      transition-all duration-300
+    `}>
+      <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200 dark:border-gray-800">
+        {!isCollapsed && <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">PMS</h1>}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-gray-100 text-secondary-500"
+          className="p-1.5 rounded-lg text-gray-600 dark:text-gray-400
+            hover:bg-gray-100 hover:text-gray-900
+            dark:hover:bg-gray-800/50 dark:hover:text-gray-100
+            transition-colors duration-200"
         >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
         </button>
       </div>
-
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex gap-3 items-center">
-          <div className="overflow-hidden flex-shrink-0 w-10 h-10 rounded-full">
-            <img
-              src="https://images.pexels.com/photos/762020/pexels-photo-762020.jpeg?auto=compress&cs=tinysrgb&w=300"
-              alt="User avatar"
-              className="object-cover w-full h-full"
-            />
-          </div>
-          {!isCollapsed && (
-            <div>
-              <p className="text-sm font-medium text-secondary-900">John Doe</p>
-              <p className="text-xs text-secondary-500">User • Free Plan</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <nav className="overflow-y-auto flex-1 p-4 space-y-1">
-        <NavLink to="/" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-          <LayoutDashboard size={20} />
-          {!isCollapsed && <span>Dashboard</span>}
-        </NavLink>
-
-        <NavLink to="/rooms" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-          <Home size={20} />
-          {!isCollapsed && <span>Rooms</span>}
-        </NavLink>
-
-        <NavLink to="/renters" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-          <Users size={20} />
-          {!isCollapsed && <span>Renters</span>}
-        </NavLink>
-
-        <NavLink to="/services" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-          <Package2 size={20} />
-          {!isCollapsed && <span>Services</span>}
-        </NavLink>
-
-        <NavLink to="/contracts" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-          <FileText size={20} />
-          {!isCollapsed && <span>Contracts</span>}
-        </NavLink>
-
-        <NavLink to="/plans" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-          <CreditCard size={20} />
-          {!isCollapsed && <span>Plans</span>}
-        </NavLink>
-
-        <NavLink to="/analytics" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-          <BarChart3 size={20} />
-          {!isCollapsed && <span>Analytics</span>}
-        </NavLink>
-
-        <NavLink to="/calendar-demo" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-          <Calendar size={20} />
-          {!isCollapsed && <span>Calendar</span>}
-        </NavLink>
-
-        <div className="pt-4 mt-4 border-t border-gray-200">
-          <NavLink to="/messages" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-            <MessageSquare size={20} />
-            {!isCollapsed && (
-              <>
-                <span>Messages</span>
-                <span className="flex justify-center items-center ml-auto w-5 h-5 text-xs text-white rounded-full bg-primary-400">3</span>
-              </>
-            )}
-          </NavLink>
-
-          <NavLink to="/settings" className={({isActive}) => `sidebar-item ${isActive ? 'active' : ''}`}>
-            <Settings size={20} />
-            {!isCollapsed && <span>Settings</span>}
-          </NavLink>
+      <nav className="overflow-y-auto flex-1 p-2 bg-white dark:bg-gray-900">
+        {navigationItems.map((item) => (
+          <SidebarItem
+            key={item.href}
+            {...item}
+            isCollapsed={isCollapsed}
+          />
+        ))}
+        {/* Mini calendar only on desktop */}
+        <div className="mt-6 hidden md:block">
+          <CalendarComponent />
         </div>
       </nav>
-
-      <div className="p-4 border-t border-gray-200">
-        {!isCollapsed && (
-          <div className="mb-4">
-            <CalendarComponent
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="w-full rounded-md border"
-            />
-          </div>
-        )}
-
-        <button className="justify-start w-full sidebar-item text-danger-400 hover:text-danger-500 hover:bg-danger-400/10">
-          <LogOut size={20} />
-          {!isCollapsed && <span>Log Out</span>}
+      <div className="p-2 bg-white border-t border-gray-200 dark:border-gray-800 dark:bg-gray-900 mt-auto">
+        <button
+          onClick={() => {
+            // Handle logout here
+          }}
+          className="flex items-center px-4 py-3 w-full text-sm font-medium text-red-600 rounded-lg transition-colors duration-200 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+        >
+          <X className="w-5 h-5" />
+          {!isCollapsed && <span className="ml-3">Logout</span>}
         </button>
       </div>
-    </aside>
+    </div>
+  );
+};
+
+const SidebarItem = ({ href, icon: Icon, label, isCollapsed }: SidebarItemProps) => {
+  const location = useLocation();
+  const isActive = location.pathname === href;
+  const [showCalendar, setShowCalendar] = React.useState(false);
+  const isCalendar = label === 'Calendar';
+
+  if (isCollapsed && isCalendar) {
+    return (
+      <div
+        className="relative flex justify-center"
+        onMouseEnter={() => setShowCalendar(true)}
+        onMouseLeave={() => setShowCalendar(false)}
+      >
+        <Link
+          to={href}
+          className={`flex items-center py-3 px-4 text-sm font-medium rounded-lg transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800/50 dark:hover:text-gray-100 ${isActive ? 'text-gray-900 bg-gray-100 dark:bg-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
+        >
+          <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : ''}`} />
+        </Link>
+        {showCalendar && (
+          <div
+            className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 animate-slideUp"
+            style={{ minWidth: 260 }}
+          >
+            <div className="shadow-lg rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+              <CalendarComponent />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={href}
+      className={`
+        flex items-center py-3 px-4 text-sm font-medium rounded-lg
+        transition-colors duration-200
+        hover:bg-gray-100 hover:text-gray-900
+        dark:hover:bg-gray-800/50 dark:hover:text-gray-100
+        ${isActive
+          ? 'text-gray-900 bg-gray-100 dark:bg-gray-800 dark:text-gray-100'
+          : 'text-gray-600 dark:text-gray-400'
+        }
+      `}
+    >
+      <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : ''}`} />
+      {!isCollapsed && <span className="ml-3">{label}</span>}
+    </Link>
   );
 };
 

@@ -1,7 +1,7 @@
 :root {
   /* Default theme variables */
   --radius: 0.5rem;
-  
+
   /* Primary colors */
   --primary-50: #f4f2ff;
   --primary-100: #e9e4ff;
@@ -14,7 +14,7 @@
   --primary-800: #5336a3;
   --primary-900: #452d85;
   --primary-950: #281a4d;
-  
+
   /* Secondary colors */
   --secondary-50: #f4f7fb;
   --secondary-100: #e9eff6;
@@ -27,7 +27,7 @@
   --secondary-800: #394a67;
   --secondary-900: #1A1F2C;
   --secondary-950: #111827;
-  
+
   /* Font size variables */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -37,7 +37,7 @@
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 1.875rem;
   --font-size-4xl: 2.25rem;
-  
+
   /* Default font family */
   font-family: var(--font-family, Inter), sans-serif;
 }
@@ -101,7 +101,7 @@
   --primary-800: #d3c9ff;
   --primary-900: #e9e4ff;
   --primary-950: #f4f2ff;
-  
+
   --secondary-50: #111827;
   --secondary-100: #1A1F2C;
   --secondary-200: #394a67;
@@ -113,4 +113,54 @@
   --secondary-800: #d3deec;
   --secondary-900: #e9eff6;
   --secondary-950: #f4f7fb;
-} 
+}
+
+.theme-default {
+  /* Use the same as :root for now, or override if needed */
+}
+
+.theme-ocean {
+  --primary-500: #0093E9;
+  --primary-600: #0077B6;
+  --primary-700: #023E8A;
+  --primary-foreground: #fff;
+}
+
+.theme-forest {
+  --primary-500: #388E3C;
+  --primary-600: #2E7D32;
+  --primary-700: #1B5E20;
+  --primary-foreground: #fff;
+}
+
+/* Glassmorphism style */
+.glass .dashboard-card,
+.glass .sidebar,
+.glass .main-container,
+.glass .glass-bg {
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+/* For dark mode glass */
+.dark.glass .dashboard-card,
+.dark.glass .sidebar,
+.dark.glass .main-container,
+.dark.glass .glass-bg {
+  background: rgba(34, 40, 49, 0.35);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* For all browsers */
+.scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
