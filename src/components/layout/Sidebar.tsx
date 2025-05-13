@@ -28,7 +28,11 @@ interface SidebarItemProps extends NavigationItem {
   isCollapsed: boolean;
 }
 
-const Sidebar = () => {
+interface SidebarProps {
+  isVisible?: boolean;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isVisible = true }) => {
   const { t } = useLanguage();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
@@ -47,6 +51,11 @@ const Sidebar = () => {
     { href: '/settings', icon: Settings, label: t('navigation.settings') }
   ];
 
+  // On mobile, hide completely if not visible
+  if (!isVisible && window.innerWidth < 768) {
+    return null;
+  }
+
   return (
     <div className={`
       sticky top-0 h-screen flex flex-col
@@ -54,6 +63,7 @@ const Sidebar = () => {
       border-r border-gray-200 dark:border-gray-800
       ${isCollapsed ? 'w-16' : 'w-64'}
       transition-all duration-300
+      ${!isVisible ? 'hidden md:flex' : 'flex'}
     `}>
       <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200 dark:border-gray-800">
         {!isCollapsed && <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">PMS</h1>}

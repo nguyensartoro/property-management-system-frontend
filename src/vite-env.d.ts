@@ -49,4 +49,5 @@ declare module 'lucide-react' {
   export const Wallet: FC<IconProps>;
   export const Send: FC<IconProps>;
   export const Building2: FC<IconProps>;
+  export const CalendarIcon: FC<IconProps>;
 }

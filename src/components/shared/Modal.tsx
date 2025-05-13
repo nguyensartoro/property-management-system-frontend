@@ -24,7 +24,7 @@ const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
-  size = 'md',
+  size = 'sm',
   showCloseButton = true,
 }) => {
   return (
@@ -35,7 +35,7 @@ const Modal: React.FC<ModalProps> = ({
           animate="visible"
           exit="exit"
           variants={modalBackdrop}
-          className="flex fixed inset-0 z-50 justify-center items-center m-0 bg-black/50"
+          className="flex fixed inset-0 z-50 justify-center items-center !m-0 bg-black/50"
           onClick={onClose}
         >
           <motion.div

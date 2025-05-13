@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { executeGraphQL } from '../utils/graphqlClient';
 import { toast } from 'react-hot-toast';
@@ -14,7 +14,7 @@ import {
   Home
 } from 'lucide-react';
 import Modal from '../components/shared/Modal';
-import { Property, Payment, Room, RoomStatus } from '../interface/interfaces';
+import { Property, Payment, Room } from '../interface/interfaces';
 import StatusBadge from '../components/shared/StatusBadge';
 import { useLanguage } from '../utils/languageContext';
 
@@ -79,13 +79,6 @@ const SettingsPage = () => {
               id
               name
               address
-              description
-              rooms {
-                id
-                name
-                number
-                status
-              }
             }
           }
         }`
@@ -157,15 +150,13 @@ const SettingsPage = () => {
               id
               name
               address
-              description
             }
           }
         }`,
         {
           input: {
             name: propertyForm.name,
-            address: propertyForm.address,
-            description: propertyForm.description
+            address: propertyForm.address
           }
         }
       );
@@ -213,7 +204,6 @@ const SettingsPage = () => {
               id
               name
               address
-              description
             }
           }
         }`,
@@ -221,8 +211,7 @@ const SettingsPage = () => {
           id: selectedProperty.id,
           input: {
             name: propertyForm.name,
-            address: propertyForm.address,
-            description: propertyForm.description
+            address: propertyForm.address
           }
         }
       );

@@ -1,22 +1,25 @@
 import React from 'react';
-import { User, Menu, Bell } from 'lucide-react';
+import { User, Menu, Bell, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import NotificationsDropdown from './NotificationsDropdown';
 import LanguageSelector from './LanguageSelector';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../utils/languageContext';
 
 interface HeaderProps {
   title?: string;
   toggleSidebar?: () => void;
   sidebarVisible?: boolean;
+  userName?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, toggleSidebar, sidebarVisible }: HeaderProps) => {
+const Header: React.FC<HeaderProps> = ({ title, toggleSidebar, sidebarVisible, userName = 'Admin' }: HeaderProps) => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState(new Date());
+  const { t } = useLanguage();
 
   React.useEffect(() => {
     const timer = setInterval(() => {
@@ -41,6 +44,9 @@ const Header: React.FC<HeaderProps> = ({ title, toggleSidebar, sidebarVisible }:
             {title}
           </h1>
         )}
+        <div className="hidden md:block text-secondary-700 dark:text-secondary-300 font-medium">
+          {t('welcomeBack').replace('{name}', user?.name || userName)}
+        </div>
       </div>
 
       <div className="flex items-center space-x-4">
@@ -74,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ title, toggleSidebar, sidebarVisible }:
                 onClick={() => logout(navigate)}
                 className="px-4 py-2 text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
               >
-                Logout
+                {t('auth.logout')}
               </button>
             </div>
           </div>

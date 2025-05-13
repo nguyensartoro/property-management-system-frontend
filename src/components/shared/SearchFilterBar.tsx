@@ -23,44 +23,76 @@ export interface FilterConfig {
 interface SearchFilterBarProps {
   filters?: FilterConfig[];
   rightContent?: React.ReactNode; // e.g. view switcher, add button, etc.
+  searchPlaceholder?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
   filters = [],
   rightContent,
+  searchPlaceholder,
+  searchValue,
+  onSearchChange,
 }: SearchFilterBarProps) => (
   <div className="flex flex-col gap-4 justify-between mb-6 md:flex-row">
-    <div className="flex flex-col gap-4 w-full md:flex-row">
+    <div className="flex flex-col gap-4 w-full md:flex-row md:flex-wrap md:items-center">
+      {/* Search input would go here if needed */}
+      {searchPlaceholder && onSearchChange && (
+        <div className="relative w-full md:max-w-sm">
+          <input
+            type="text"
+            placeholder={searchPlaceholder}
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="px-3 py-2 w-full rounded-md border border-gray-200 text-sm font-vietnam focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+          />
+        </div>
+      )}
+      
       {filters.map((filter: FilterConfig, idx: number) => (
-        <div className="flex gap-2 items-center" key={filter.label + idx}>
-          <label className="text-sm text-secondary-700">{filter.label}</label>
+        <div className="flex items-center" key={filter.label + idx}>
           {filter.type === 'dropdown' && filter.options && (
-            <select
-              value={filter.value as string}
-              onChange={e => filter.onChange(e.target.value)}
-              className={filter.className || "min-w-[120px] px-2 py-2 rounded border border-gray-200 text-xs"}
-            >
-              {filter.options.map((opt: FilterOption) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            <div className="relative group">
+              <select
+                value={filter.value as string}
+                onChange={e => filter.onChange(e.target.value)}
+                className={filter.className || "min-w-[120px] px-3 py-2 rounded border border-gray-200 text-sm font-vietnam"}
+                aria-label={filter.label}
+                title={filter.label}
+              >
+                {filter.options.map((opt: FilterOption) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <div className="absolute -top-8 left-0 px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
+                {filter.label}
+              </div>
+            </div>
           )}
           {/* Range filter: move hooks to top level, render here if type === 'range' */}
           {filter.type === 'range' && <RangeSlider filter={filter} />}
           {!filter.type && filter.options && (
-            <select
-              value={filter.value as string}
-              onChange={e => filter.onChange(e.target.value)}
-              className={filter.className || "min-w-[120px] px-2 py-2 rounded border border-gray-200 text-xs"}
-            >
-              {filter.options.map((opt: FilterOption) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            <div className="relative group">
+              <select
+                value={filter.value as string}
+                onChange={e => filter.onChange(e.target.value)}
+                className={filter.className || "min-w-[120px] px-3 py-2 rounded border border-gray-200 text-sm font-vietnam"}
+                aria-label={filter.label}
+                title={filter.label}
+              >
+                {filter.options.map((opt: FilterOption) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <div className="absolute -top-8 left-0 px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
+                {filter.label}
+              </div>
+            </div>
           )}
         </div>
       ))}
-      {rightContent && <div className="flex gap-2 items-center ml-auto">{rightContent}</div>}
+      {rightContent && <div className="flex gap-2 items-center mt-2 md:mt-0 md:ml-auto">{rightContent}</div>}
     </div>
   </div>
 );
@@ -91,7 +123,7 @@ function RangeSlider({ filter }: { filter: FilterConfig }) {
   };
   const percent = (val: number) => ((val - min) / (max - min)) * 100;
   return (
-    <div className="flex flex-col w-56">
+    <div className="flex flex-col w-full md:w-56 relative group">
       <div className="flex relative items-center h-8">
         {/* Track background */}
         <div className="absolute right-0 left-0 h-1 bg-gray-200 rounded" />
@@ -153,6 +185,9 @@ function RangeSlider({ filter }: { filter: FilterConfig }) {
       <div className="flex justify-between mt-1 text-xs text-gray-400">
         <span>${localMin}</span>
         <span>${localMax}</span>
+      </div>
+      <div className="absolute -top-8 left-0 px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
+        {filter.label}
       </div>
     </div>
   );

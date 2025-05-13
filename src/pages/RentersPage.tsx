@@ -8,6 +8,8 @@ import { GET_RENTERS, DELETE_RENTER } from '@/providers/RenterProvider';
 import { toast } from 'react-hot-toast';
 import RenterForm from '../components/renters/RenterForm';
 import Modal from '../components/shared/Modal';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../utils/languageContext';
 
 type SelectOption = { value: string; label: string };
 
@@ -29,6 +31,7 @@ interface Renter {
 }
 
 const RentersPage: React.FC = () => {
+  const { t } = useLanguage();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
@@ -42,18 +45,34 @@ const RentersPage: React.FC = () => {
   const currentPage = 1; // Fixed page for now since pagination is not yet implemented
   const itemsPerPage = 10;
 
+  // Get URL search params and navigate function
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const shouldOpenAddModal = searchParams.get('openAddModal') === 'true';
+
+  // Check URL parameter and open add modal if needed
+  React.useEffect(() => {
+    if (shouldOpenAddModal) {
+      setIsAddModalOpen(true);
+      // Remove the parameter from the URL
+      searchParams.delete('openAddModal');
+      navigate({ search: searchParams.toString() }, { replace: true });
+    }
+  }, [shouldOpenAddModal, navigate, searchParams]);
+
   // Apollo query
   const { data, loading, error, refetch } = useQuery(GET_RENTERS, {
     variables: {
       page: currentPage,
       limit: itemsPerPage,
       searchText: searchTerm || undefined,
-      sortBy: sortBy === 'name-asc' ? 'name' : 
-              sortBy === 'name-desc' ? 'name' : 
-              sortBy === 'newest' ? 'createdAt' : 
+      sortBy: sortBy === 'name-asc' ? 'name' :
+              sortBy === 'name-desc' ? 'name' :
+              sortBy === 'newest' ? 'createdAt' :
               sortBy === 'oldest' ? 'createdAt' : undefined,
-      sortOrder: sortBy === 'name-asc' ? 'asc' : 
-                sortBy === 'name-desc' ? 'desc' : 
+      sortOrder: sortBy === 'name-asc' ? 'asc' :
+                sortBy === 'name-desc' ? 'desc' :
                 sortBy === 'oldest' ? 'asc' : 'desc',
     },
     fetchPolicy: 'cache-and-network',
@@ -71,11 +90,11 @@ const RentersPage: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading renters...</div>;
+    return <div className="flex justify-center items-center h-64">{t('common.loading')}...</div>;
   }
 
   if (error) {
-    return <div className="flex justify-center items-center h-64 text-red-500">Error loading renters: {error.message}</div>;
+    return <div className="flex justify-center items-center h-64 text-red-500">{t('common.errorLoading')}: {error.message}</div>;
   }
 
   const renters = data?.renters?.nodes || [];
@@ -94,16 +113,16 @@ const RentersPage: React.FC = () => {
   };
 
   const statusOptions: SelectOption[] = [
-    { value: 'All', label: `All (${statusCount.All})` },
-    { value: 'Active', label: `Active (${statusCount.Active})` },
-    { value: 'Inactive', label: `Inactive (${statusCount.Inactive})` },
+    { value: 'All', label: `${t('common.all')} (${statusCount.All})` },
+    { value: 'Active', label: `${t('common.active')} (${statusCount.Active})` },
+    { value: 'Inactive', label: `${t('common.inactive')} (${statusCount.Inactive})` },
   ];
 
   const sortByOptions: SelectOption[] = [
-    { value: 'name-asc', label: 'Name: A-Z' },
-    { value: 'name-desc', label: 'Name: Z-A' },
-    { value: 'newest', label: 'Newest' },
-    { value: 'oldest', label: 'Oldest' },
+    { value: 'name-asc', label: t('renters.nameAZ') },
+    { value: 'name-desc', label: t('renters.nameZA') },
+    { value: 'newest', label: t('common.newest') },
+    { value: 'oldest', label: t('common.oldest') },
   ];
 
   // CRUD handlers
@@ -111,36 +130,36 @@ const RentersPage: React.FC = () => {
     closeAllModals();
     setIsAddModalOpen(true);
   };
-  
+
   const handleEditRenter = (renter: Renter) => {
     closeAllModals();
     setSelectedRenter(renter);
     setIsEditModalOpen(true);
   };
-  
+
   const handleViewRenter = (renter: Renter) => {
     closeAllModals();
     setSelectedRenter(renter);
     setIsViewModalOpen(true);
   };
-  
+
   const handleDeleteRenter = (renter: Renter) => {
     closeAllModals();
     setRenterToDelete(renter);
     setDeleteConfirmOpen(true);
   };
-  
+
   const confirmDeleteRenter = async () => {
     if (!renterToDelete) return;
     try {
-      const { data } = await deleteRenterMutation({
+      await deleteRenterMutation({
         variables: { id: renterToDelete.id },
       });
-      
-      toast.success(`Renter ${renterToDelete.name} deleted!`);
+
+      toast.success(t('renters.renterDeleted').replace('{name}', renterToDelete.name));
       refetch();
     } catch (error) {
-      toast.error(`Failed to delete renter: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`${t('common.error')}: ${error instanceof Error ? error.message : t('common.unknownError')}`);
     }
     setDeleteConfirmOpen(false);
     setRenterToDelete(null);
@@ -156,31 +175,33 @@ const RentersPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 justify-between md:flex-row md:items-center">
         <div>
-          <h2 className="text-2xl font-bold text-secondary-900">Renters Management</h2>
-          <p className="text-secondary-500">Manage all your renters</p>
+          <h2 className="text-2xl font-bold text-secondary-900 dark:text-gray-100">{t('navigation.renters')}</h2>
+          <p className="text-secondary-500 dark:text-gray-400">{t('renters.manageRenters')}</p>
         </div>
         <button
           onClick={handleAddRenter}
           className="flex gap-2 items-center btn btn-primary"
         >
           <Plus size={16} />
-          <span>Add New Renter</span>
+          <span>{t('renters.addRenter')}</span>
         </button>
       </div>
-      <div className="dashboard-card">
+      <div className="dashboard-card dark:bg-gray-800 dark:border-gray-700">
         <SearchFilterBar
-          searchPlaceholder="Search by name, email, or phone..."
+          searchPlaceholder={t('renters.searchPlaceholder')}
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
           filters={[
             {
-              label: 'Status',
+              type: 'dropdown',
+              label: t('common.status'),
               value: filterStatus,
               options: statusOptions,
               onChange: setFilterStatus,
             },
             {
-              label: 'Sort By',
+              type: 'dropdown',
+              label: t('common.sortBy'),
               value: sortBy,
               options: sortByOptions,
               onChange: setSortBy,
@@ -190,37 +211,53 @@ const RentersPage: React.FC = () => {
             <ViewModeSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
           }
         />
-        <RentersList
-          renters={filteredRenters}
-          viewMode={viewMode}
-          onEditRenter={handleEditRenter}
-          onViewRenter={handleViewRenter}
-          onDeleteRenter={handleDeleteRenter}
-        />
+
+        {filteredRenters.length > 0 ? (
+          <RentersList
+            renters={filteredRenters}
+            viewMode={viewMode}
+            onEditRenter={handleEditRenter}
+            onViewRenter={handleViewRenter}
+            onDeleteRenter={handleDeleteRenter}
+          />
+        ) : (
+          <div className="flex justify-center items-center h-40 text-secondary-500 dark:text-gray-400">
+            {t('common.noRentersFound')}
+          </div>
+        )}
       </div>
-      
+
       {/* Add Renter Form */}
-      <RenterForm
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleRenterFormSubmit}
-        closeOtherModals={closeAllModals}
-      />
-      
-      {/* Edit Renter Form */}
-      {selectedRenter && (
-        <RenterForm
-          isOpen={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setSelectedRenter(null);
-          }}
-          onSubmit={handleRenterFormSubmit}
-          editData={selectedRenter}
-          closeOtherModals={closeAllModals}
-        />
+      {isAddModalOpen && (
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title={t('renters.addRenter')}
+          size="lg"
+        >
+          <RenterForm
+            onClose={() => setIsAddModalOpen(false)}
+            onSubmit={handleRenterFormSubmit}
+          />
+        </Modal>
       )}
-      
+
+      {/* Edit Renter Form */}
+      {isEditModalOpen && selectedRenter && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title={t('renters.editRenter')}
+          size="lg"
+        >
+          <RenterForm
+            onClose={() => setIsEditModalOpen(false)}
+            onSubmit={handleRenterFormSubmit}
+            editData={selectedRenter}
+          />
+        </Modal>
+      )}
+
       {/* View Renter Modal */}
       {selectedRenter && (
         <Modal
@@ -229,51 +266,51 @@ const RentersPage: React.FC = () => {
             setIsViewModalOpen(false);
             setSelectedRenter(null);
           }}
-          title="Renter Details"
+          title={t('renters.renterDetails')}
           size="md"
         >
           <div className="space-y-4 min-w-[680px]">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <p className="text-sm text-secondary-500">Name</p>
+                <p className="text-sm text-secondary-500">{t('renters.name')}</p>
                 <p className="font-medium">{selectedRenter.name}</p>
               </div>
-              
+
               <div>
-                <p className="text-sm text-secondary-500">Email</p>
+                <p className="text-sm text-secondary-500">{t('renters.email')}</p>
                 <p className="font-medium">{selectedRenter.email || 'N/A'}</p>
               </div>
-              
+
               <div>
-                <p className="text-sm text-secondary-500">Phone</p>
+                <p className="text-sm text-secondary-500">{t('renters.phone')}</p>
                 <p className="font-medium">{selectedRenter.phone || 'N/A'}</p>
               </div>
-              
+
               <div>
-                <p className="text-sm text-secondary-500">Emergency Contact</p>
+                <p className="text-sm text-secondary-500">{t('renters.emergencyContact')}</p>
                 <p className="font-medium">{selectedRenter.emergencyContact || 'N/A'}</p>
               </div>
-              
+
               <div>
-                <p className="text-sm text-secondary-500">Identity Number</p>
+                <p className="text-sm text-secondary-500">{t('renters.identityNumber')}</p>
                 <p className="font-medium">{selectedRenter.identityNumber || 'N/A'}</p>
               </div>
-              
+
               <div>
-                <p className="text-sm text-secondary-500">Room</p>
+                <p className="text-sm text-secondary-500">{t('renters.room')}</p>
                 <p className="font-medium">
-                  {selectedRenter.roomId ? 
-                    `${selectedRenter.room?.number || ''} ${selectedRenter.room?.name || ''}` : 
-                    'No room assigned'}
+                  {selectedRenter.roomId ?
+                    `${selectedRenter.room?.number || ''} ${selectedRenter.room?.name || ''}` :
+                    t('renters.noRoom')}
                 </p>
               </div>
 
               {selectedRenter.documents && selectedRenter.documents.length > 0 && (
                 <div className="col-span-2">
-                  <p className="text-sm text-secondary-500 mb-2">Documents</p>
+                  <p className="mb-2 text-sm text-secondary-500">{t('renters.documents')}</p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedRenter.documents.map((doc) => (
-                      <div key={doc.id} className="p-2 border rounded">
+                    {selectedRenter.documents.map((doc: { id: string; name: string; type: string }) => (
+                      <div key={doc.id} className="p-2 rounded border">
                         <p className="text-xs">{doc.name}</p>
                         <p className="text-xs text-secondary-500">{doc.type}</p>
                       </div>
@@ -282,41 +319,41 @@ const RentersPage: React.FC = () => {
                 </div>
               )}
             </div>
-            
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
+
+            <div className="flex gap-3 justify-end pt-4 mt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => {
-                  setIsViewModalOpen(false); 
+                  setIsViewModalOpen(false);
                   handleEditRenter(selectedRenter);
                 }}
-                className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600"
+                className="px-4 py-2 text-white rounded-md bg-primary-500 hover:bg-primary-600"
               >
-                Edit Renter
+                {t('renters.editRenter')}
               </button>
             </div>
           </div>
         </Modal>
       )}
-      
+
       {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-            <p>Are you sure you want to delete renter <span className="font-bold">{renterToDelete?.name}</span>?</p>
-            <div className="flex justify-end gap-3 mt-6">
+        <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-40">
+          <div className="p-6 w-full max-w-sm bg-white rounded-lg shadow-lg">
+            <h3 className="mb-4 text-lg font-semibold">{t('common.confirmDelete')}</h3>
+            <p>{t('renters.confirmDeleteRenter')} <span className="font-bold">{renterToDelete?.name}</span>?</p>
+            <div className="flex gap-3 justify-end mt-6">
               <button
                 className="px-4 py-2 rounded-md border border-gray-300 text-secondary-700 hover:bg-gray-50"
                 onClick={() => { setDeleteConfirmOpen(false); setRenterToDelete(null); }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="px-4 py-2 text-white rounded-md bg-danger-500 hover:bg-danger-600"
                 onClick={confirmDeleteRenter}
               >
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </div>

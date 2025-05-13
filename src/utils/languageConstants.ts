@@ -74,6 +74,102 @@ export const TEXT = {
       en: 'Next',
       vi: 'Tiếp',
     },
+    welcomeBack: {
+      en: 'Welcome back, {name}!',
+      vi: 'Chào mừng trở lại, {name}!',
+    },
+    noResults: {
+      en: 'No results found',
+      vi: 'Không tìm thấy kết quả',
+    },
+    noRoomsFound: {
+      en: 'No rooms found',
+      vi: 'Không tìm thấy phòng nào',
+    },
+    noRentersFound: {
+      en: 'No renters found',
+      vi: 'Không tìm thấy người thuê nào',
+    },
+    noServicesFound: {
+      en: 'No services found',
+      vi: 'Không tìm thấy dịch vụ nào',
+    },
+    noContractsFound: {
+      en: 'No contracts found',
+      vi: 'Không tìm thấy hợp đồng nào',
+    },
+    all: {
+      en: 'All',
+      vi: 'Tất cả',
+    },
+    allStatuses: {
+      en: 'All Statuses',
+      vi: 'Tất cả trạng thái',
+    },
+    min: {
+      en: 'Min',
+      vi: 'Tối thiểu',
+    },
+    max: {
+      en: 'Max',
+      vi: 'Tối đa',
+    },
+    status: {
+      en: 'Status',
+      vi: 'Trạng thái',
+    },
+    sortBy: {
+      en: 'Sort By',
+      vi: 'Sắp xếp theo',
+    },
+    price: {
+      en: 'Price',
+      vi: 'Giá',
+    },
+    confirmDelete: {
+      en: 'Confirm Delete',
+      vi: 'Xác nhận xóa',
+    },
+    newest: {
+      en: 'Newest',
+      vi: 'Mới nhất',
+    },
+    priceLowToHigh: {
+      en: 'Price: Low to High',
+      vi: 'Giá: Thấp đến cao',
+    },
+    priceHighToLow: {
+      en: 'Price: High to Low',
+      vi: 'Giá: Cao đến thấp',
+    },
+    showing: {
+      en: 'Showing',
+      vi: 'Hiển thị',
+    },
+    to: {
+      en: 'to',
+      vi: 'đến',
+    },
+    of: {
+      en: 'of',
+      vi: 'trong số',
+    },
+    loading: {
+      en: 'Loading',
+      vi: 'Đang tải',
+    },
+    errorLoading: {
+      en: 'Error loading data',
+      vi: 'Lỗi khi tải dữ liệu',
+    },
+    error: {
+      en: 'Error',
+      vi: 'Lỗi',
+    },
+    unknownError: {
+      en: 'Unknown error',
+      vi: 'Lỗi không xác định',
+    },
   },
 
   // Auth related text
@@ -113,6 +209,22 @@ export const TEXT = {
     registerAsRenter: {
       en: 'Register as a renter',
       vi: 'Đăng ký với tư cách người thuê',
+    },
+    signIn: {
+      en: 'Sign in to your account',
+      vi: 'Đăng nhập vào tài khoản',
+    },
+    createNewAccount: {
+      en: 'create a new account',
+      vi: 'tạo tài khoản mới',
+    },
+    signingIn: {
+      en: 'Signing in...',
+      vi: 'Đang đăng nhập...',
+    },
+    logout: {
+      en: 'Logout',
+      vi: 'Đăng xuất',
     },
   },
 
@@ -189,6 +301,54 @@ export const TEXT = {
     contracts: {
       en: 'Contracts',
       vi: 'Hợp đồng',
+    },
+    recentPayments: {
+      en: 'Recent Payments',
+      vi: 'Thanh toán gần đây',
+    },
+    upcomingEvents: {
+      en: 'Upcoming Events',
+      vi: 'Sự kiện sắp tới',
+    },
+    alerts: {
+      en: 'Alerts',
+      vi: 'Cảnh báo',
+    },
+    paid: {
+      en: 'Paid',
+      vi: 'Đã thanh toán',
+    },
+    pending: {
+      en: 'Pending',
+      vi: 'Đang chờ',
+    },
+    paymentStatus: {
+      en: 'Status',
+      vi: 'Trạng thái',
+    },
+    contractExpiration: {
+      en: 'Contract Expiration',
+      vi: 'Hết hạn hợp đồng',
+    },
+    maintenance: {
+      en: 'Maintenance',
+      vi: 'Bảo trì',
+    },
+    newRenter: {
+      en: 'New Renter',
+      vi: 'Người thuê mới',
+    },
+    overduePayment: {
+      en: 'Overdue Payment',
+      vi: 'Thanh toán quá hạn',
+    },
+    contractExpiringSoon: {
+      en: 'Contract Expiring Soon',
+      vi: 'Hợp đồng sắp hết hạn',
+    },
+    occupancyRate: {
+      en: 'Occupancy Rate',
+      vi: 'Tỷ lệ lấp đầy',
     },
   },
 
@@ -346,13 +506,13 @@ export const TEXT = {
 
   // Room status values
   roomStatus: {
-    available: {
-      en: 'Available',
-      vi: 'Trống',
-    },
     occupied: {
       en: 'Occupied',
       vi: 'Đã thuê',
+    },
+    available: {
+      en: 'Available',
+      vi: 'Trống',
     },
     reserved: {
       en: 'Reserved',
@@ -360,11 +520,7 @@ export const TEXT = {
     },
     maintenance: {
       en: 'Maintenance',
-      vi: 'Đang bảo trì',
-    },
-    unavailable: {
-      en: 'Unavailable',
-      vi: 'Không khả dụng',
+      vi: 'Bảo trì',
     },
   },
 
@@ -619,6 +775,66 @@ export const TEXT = {
       vi: 'Th.12',
     },
   },
+
+  // Rooms page specific texts
+  rooms: {
+    type: {
+      en: 'Type',
+      vi: 'Loại phòng',
+    },
+    single: {
+      en: 'Single',
+      vi: 'Đơn',
+    },
+    double: {
+      en: 'Double',
+      vi: 'Đôi',
+    },
+    suite: {
+      en: 'Suite',
+      vi: 'Suite',
+    },
+    studio: {
+      en: 'Studio',
+      vi: 'Studio',
+    },
+    roomNumber: {
+      en: 'Room Number',
+      vi: 'Số phòng',
+    },
+    manageRooms: {
+      en: 'Manage all your rental rooms',
+      vi: 'Quản lý tất cả các phòng cho thuê của bạn',
+    },
+    addNewRoom: {
+      en: 'Add New Room',
+      vi: 'Thêm phòng mới',
+    },
+    searchPlaceholder: {
+      en: 'Search by room number...',
+      vi: 'Tìm kiếm theo số phòng...',
+    },
+    roomCreated: {
+      en: 'Room {number} created!',
+      vi: 'Phòng {number} đã được tạo!',
+    },
+    roomUpdated: {
+      en: 'Room {number} updated!',
+      vi: 'Phòng {number} đã được cập nhật!',
+    },
+    roomDeleted: {
+      en: 'Room {number} deleted!',
+      vi: 'Phòng {number} đã bị xóa!',
+    },
+    failedToDelete: {
+      en: 'Failed to delete room',
+      vi: 'Không thể xóa phòng',
+    },
+    confirmDeleteRoom: {
+      en: 'Are you sure you want to delete room',
+      vi: 'Bạn có chắc chắn muốn xóa phòng',
+    },
+  },
 };
 
 // Define types for translation objects
@@ -627,7 +843,7 @@ export const getText = (path: string, language: Language = 'en'): string => {
   const parts = path.split('.');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let result: any = TEXT;
-  
+
   for (const part of parts) {
     if (result[part]) {
       result = result[part];
@@ -635,6 +851,6 @@ export const getText = (path: string, language: Language = 'en'): string => {
       return path; // Return the path if text not found
     }
   }
-  
+
   return result[language] || path;
-}; 
+};

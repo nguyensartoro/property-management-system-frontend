@@ -82,18 +82,18 @@
   }
 
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Be Vietnam Pro', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-vietnam;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium text-foreground;
+    @apply font-medium text-foreground font-vietnam;
     line-height: 1.25;
   }
 

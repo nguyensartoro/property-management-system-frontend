@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useLanguage } from '../utils/languageContext';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = React.useState('');
@@ -9,6 +10,7 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const { login, loading, error } = useAuthStore();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,11 +29,11 @@ const LoginPage: React.FC = () => {
               <div className="w-4 h-4 rounded-sm bg-primary-400"></div>
             </div>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-center text-gray-900">Sign in to your account</h2>
+          <h2 className="mt-6 text-3xl font-extrabold text-center text-gray-900">{t('auth.signIn')}</h2>
           <p className="mt-2 text-sm text-center text-gray-600">
-            Or{' '}
+            {t('auth.orSignIn')}{' '}
             <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">
-              create a new account
+              {t('auth.createNewAccount')}
             </Link>
           </p>
         </div>
@@ -54,7 +56,7 @@ const LoginPage: React.FC = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="-space-y-px rounded-md shadow-sm">
             <div>
-              <label htmlFor="email-address" className="sr-only">Email address</label>
+              <label htmlFor="email-address" className="sr-only">{t('auth.emailAddress')}</label>
               <input
                 id="email-address"
                 name="email"
@@ -62,13 +64,13 @@ const LoginPage: React.FC = () => {
                 autoComplete="email"
                 required
                 className="block relative px-3 py-2 w-full placeholder-gray-500 text-gray-900 rounded-none rounded-t-md border border-gray-300 appearance-none focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                placeholder={t('auth.emailAddress')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="relative">
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label htmlFor="password" className="sr-only">{t('auth.password')}</label>
               <input
                 id="password"
                 name="password"
@@ -76,7 +78,7 @@ const LoginPage: React.FC = () => {
                 autoComplete="current-password"
                 required
                 className="block relative px-3 py-2 w-full placeholder-gray-500 text-gray-900 rounded-none rounded-b-md border border-gray-300 appearance-none focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                placeholder={t('auth.password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -100,7 +102,7 @@ const LoginPage: React.FC = () => {
               disabled={loading}
               className="flex relative justify-center px-4 py-2 w-full text-sm font-medium text-white rounded-md border border-transparent group bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? t('auth.signingIn') : t('auth.signIn')}
             </button>
           </div>
         </form>

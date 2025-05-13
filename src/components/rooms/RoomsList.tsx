@@ -82,16 +82,16 @@ const RoomsList = ({
   }
 
   return (
-    <div className="scrollbar-none">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div className="overflow-x-auto">
+      <table className="data-table w-full">
         <thead>
-          <tr className="bg-gray-50">
+          <tr>
             {tableTitle.map((title, index) => (
-              <th key={index} className="px-4 py-4 text-sm font-bold tracking-wider text-left uppercase text-secondary-900">{title}</th>
+              <th key={index} className="px-4 py-3 text-sm font-medium text-left text-secondary-700">{title}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200" style={{ overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <tbody>
           {rooms.map((room, index) => {
             const contract = room.contracts?.[0];
             return (
@@ -101,7 +101,7 @@ const RoomsList = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="border-b border-gray-200 hover:bg-gray-100 hover:border-gray-400"
+                className="border-b border-gray-200 hover:bg-gray-50"
               >
                 <td className="px-4 py-3 text-sm font-medium text-secondary-900">
                   <div className="flex items-center">
