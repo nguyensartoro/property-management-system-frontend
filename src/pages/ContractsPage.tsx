@@ -1,453 +1,538 @@
-import React from 'react';
-import { Plus } from 'lucide-react';
-import { useQuery, useMutation } from '@apollo/client';
-import ContractsList from '../components/contracts/ContractsList';
-import ViewModeSwitcher from '../components/shared/ViewModeSwitcher';
-import SearchFilterBar from '../components/shared/SearchFilterBar';
-import { GET_CONTRACTS, DELETE_CONTRACT, CREATE_CONTRACT, UPDATE_CONTRACT } from '@/providers/ContractProvider';
-import { toast } from 'react-hot-toast';
-import ContractForm from '../components/contracts/ContractForm';
-import Modal from '../components/shared/Modal';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useLanguage } from '../utils/languageContext';
+import React, { useEffect, useState } from 'react';
+import { useContractStore } from '../stores/contractStore';
+import { useRenterStore } from '../stores/renterStore';
+import { useRoomStore } from '../stores/roomStore';
+import { useAuthStore } from '../stores/authStore';
+import { ContractStatus, ContractType } from '../utils/apiClient';
+import { useToast } from '../hooks/use-toast';
+import { 
+  canManageContracts, 
+  canUploadContractDocuments,
+  canViewContractDetails,
+  getAllowedActions
+} from '../utils/roleBasedAccess';
+import { RoleGuard } from '../components/auth/RoleGuard';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SearchFilterBar } from '../components/shared/SearchFilterBar';
+import { PageHeader } from '../components/shared/PageHeader';
+import ContractList from '../components/contracts/ContractList';
+import ContractFormModal from '../components/contracts/ContractFormModal';
+import { ContractDetailsModal } from '../components/contracts/ContractDetails';
+import DocumentUploadModal from '../components/contracts/DocumentUploadModal';
 
-type SelectOption = { value: string; label: string };
+import { Plus, Filter, Download, Upload, AlertCircle, Calendar, FileText, Users, Building } from 'lucide-react';
+import { format } from 'date-fns';
 
-interface Renter {
-  id: string;
-  name: string;
-}
 
-interface Room {
-  id: string;
-  number: string;
-  name: string;
-}
 
-interface Contract {
-  id: string;
-  type: 'LONG_TERM' | 'SHORT_TERM';
-  status: 'ACTIVE' | 'EXPIRED' | 'TERMINATED';
-  startDate: string;
-  endDate: string;
-  rentAmount: number;
-  depositAmount: number;
-  renter: Renter;
-  room: Room;
-}
-
-interface ContractFormData {
-  id?: string;
-  roomId: string;
-  room?: Room;
-  renterIds: string[];
-  renters?: Renter[];
-  startDate: string;
-  endDate: string;
-  contractType: string;
-  type?: string;
-  status?: string;
-  amount: number;
-}
-
+// Main component
 const ContractsPage: React.FC = () => {
-  const { t } = useLanguage();
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
-  const [selectedContract, setSelectedContract] = React.useState<Contract | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
-  const [contractToDelete, setContractToDelete] = React.useState<Contract | null>(null);
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [filterStatus, setFilterStatus] = React.useState<string>('All');
-  const [filterType, setFilterType] = React.useState<string>('All');
-  const [sortBy, setSortBy] = React.useState<string>('startDate');
-  const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('list');
-  const currentPage = 1; // Fixed page for now since pagination is not yet implemented
-  const itemsPerPage = 10;
+  const { toast } = useToast();
+  const { user } = useAuthStore();
+  
+  // Get allowed actions for current user
+  const allowedActions = getAllowedActions(user, 'contracts');
+  
+  // Zustand stores
+  const {
+    contracts,
+    selectedContract,
+    expiringContracts,
+    isLoading,
+    error,
+    pagination,
+    filters,
+    fetchContracts,
+    fetchContractById,
+    fetchExpiringContracts,
+    createContract,
+    updateContract,
+    deleteContract,
+    terminateContract,
+    renewContract,
+    uploadContractDocument,
+    setFilters,
+    clearFilters,
+    clearSelectedContract,
+    clearError,
+  } = useContractStore();
 
-  // Get URL search params and navigate function
-  const location = useLocation();
-  const navigate = useNavigate();
-  const searchParams = new URLSearchParams(location.search);
-  const shouldOpenAddModal = searchParams.get('openAddModal') === 'true';
+  const {
+    renters,
+    fetchRenters,
+    isLoading: rentersLoading,
+  } = useRenterStore();
 
-  // Check URL parameter and open add modal if needed
-  React.useEffect(() => {
-    if (shouldOpenAddModal) {
-      setIsAddModalOpen(true);
-      // Remove the parameter from the URL
-      searchParams.delete('openAddModal');
-      navigate({ search: searchParams.toString() }, { replace: true });
+  const {
+    rooms,
+    fetchRooms,
+    isLoading: roomsLoading,
+  } = useRoomStore();
+  
+  // Local state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedContractForUpload, setSelectedContractForUpload] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchContracts(currentPage, 10, {
+      search: searchTerm,
+      status: statusFilter,
+      contractType: typeFilter,
+      sortBy,
+      sortOrder,
+    });
+    fetchRenters(1, 100);
+    fetchRooms(1, 100);
+    fetchExpiringContracts(30);
+  }, [currentPage, searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
+
+  // Handle search and filters
+  const handleSearch = (search: string) => {
+    setSearchTerm(search);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (filterType: string, value: string) => {
+    if (filterType === 'status') {
+      setStatusFilter(value);
+    } else if (filterType === 'type') {
+      setTypeFilter(value);
     }
-  }, [shouldOpenAddModal, navigate, searchParams]);
-
-  // Apollo queries and mutations
-  const { data, loading, error, refetch } = useQuery(GET_CONTRACTS, {
-    variables: {
-      page: currentPage,
-      limit: itemsPerPage,
-      searchText: searchTerm || undefined,
-      status: filterStatus === 'All' ? undefined : filterStatus,
-      type: filterType === 'All' ? undefined : filterType,
-      sortBy: sortBy === 'startDate-asc' ? 'startDate' :
-              sortBy === 'startDate-desc' ? 'startDate' :
-              sortBy === 'amount-high' ? 'rentAmount' :
-              sortBy === 'amount-low' ? 'rentAmount' : undefined,
-      sortOrder: sortBy === 'startDate-asc' ? 'asc' :
-                sortBy === 'startDate-desc' ? 'desc' :
-                sortBy === 'amount-low' ? 'asc' : 'desc',
-    },
-    fetchPolicy: 'cache-and-network',
-  });
-
-  const [deleteContractMutation] = useMutation(DELETE_CONTRACT);
-  const [createContractMutation] = useMutation(CREATE_CONTRACT);
-  const [updateContractMutation] = useMutation(UPDATE_CONTRACT);
-
-  const closeAllModals = () => {
-    setIsAddModalOpen(false);
-    setIsEditModalOpen(false);
-    setIsViewModalOpen(false);
-    setDeleteConfirmOpen(false);
-    setSelectedContract(null);
-    setContractToDelete(null);
+    setCurrentPage(1);
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-64">{t('common.loading')}...</div>;
-  }
-
-  if (error) {
-    return <div className="flex justify-center items-center h-64 text-red-500">{t('common.errorLoading')}: {error.message}</div>;
-  }
-
-  const contracts = data?.contracts?.nodes || [];
-
-  const statusCount = {
-    All: contracts.length,
-    ACTIVE: contracts.filter((contract: Contract) => contract.status === 'ACTIVE').length,
-    EXPIRED: contracts.filter((contract: Contract) => contract.status === 'EXPIRED').length,
-    TERMINATED: contracts.filter((contract: Contract) => contract.status === 'TERMINATED').length,
+  const handleSortChange = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
   };
 
-  const typeCount = {
-    All: contracts.length,
-    LONG_TERM: contracts.filter((contract: Contract) => contract.type === 'LONG_TERM').length,
-    SHORT_TERM: contracts.filter((contract: Contract) => contract.type === 'SHORT_TERM').length,
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setTypeFilter('');
+    setSortBy('createdAt');
+    setSortOrder('desc');
+    setCurrentPage(1);
+    clearFilters();
   };
 
-  const statusOptions: SelectOption[] = [
-    { value: 'All', label: `${t('common.all')} (${statusCount.All})` },
-    { value: 'ACTIVE', label: `${t('contracts.active')} (${statusCount.ACTIVE})` },
-    { value: 'EXPIRED', label: `${t('contracts.expired')} (${statusCount.EXPIRED})` },
-    { value: 'TERMINATED', label: `${t('contracts.terminated')} (${statusCount.TERMINATED})` },
-  ];
-
-  const typeOptions: SelectOption[] = [
-    { value: 'All', label: `${t('common.all')} (${typeCount.All})` },
-    { value: 'LONG_TERM', label: `${t('contracts.longTerm')} (${typeCount.LONG_TERM})` },
-    { value: 'SHORT_TERM', label: `${t('contracts.shortTerm')} (${typeCount.SHORT_TERM})` },
-  ];
-
-  const sortByOptions: SelectOption[] = [
-    { value: 'startDate-desc', label: t('common.newest') },
-    { value: 'startDate-asc', label: t('common.oldest') },
-    { value: 'amount-high', label: t('common.priceHighToLow') },
-    { value: 'amount-low', label: t('common.priceLowToHigh') },
-  ];
-
-  // CRUD handlers
-  const handleAddContract = () => {
-    closeAllModals();
-    setIsAddModalOpen(true);
+  // Handle contract operations
+  const handleCreateContract = async (formData: any) => {
+    try {
+      await createContract(formData);
+      setIsCreateModalOpen(false);
+      toast({
+        title: "Success",
+        description: "Contract created successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create contract",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditContract = (contract: Contract) => {
-    closeAllModals();
-    setSelectedContract(contract);
+  const handleUpdateContract = async (formData: any) => {
+    if (!selectedContract) return;
+    
+    try {
+      await updateContract(selectedContract.id, formData);
+      setIsEditModalOpen(false);
+      toast({
+        title: "Success",
+        description: "Contract updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update contract",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteContract = async (id: string) => {
+    if (confirm('Are you sure you want to delete this contract?')) {
+      try {
+        await deleteContract(id);
+        toast({
+          title: "Success",
+          description: "Contract deleted successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete contract",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleTerminateContract = async (id: string, reason: string) => {
+    try {
+      await terminateContract(id, reason);
+      toast({
+        title: "Success",
+        description: "Contract terminated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to terminate contract",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRenewContract = async (id: string, newEndDate: string, monthlyRent?: number) => {
+    try {
+      await renewContract(id, newEndDate, monthlyRent);
+      toast({
+        title: "Success",
+        description: "Contract renewed successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to renew contract",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDocumentUpload = async (file: File) => {
+    if (!selectedContractForUpload) return;
+    
+    try {
+      // In a real implementation, you would upload the file to a storage service
+      // and get back a URL. For now, we'll simulate this.
+      const documentPath = `/uploads/contracts/${selectedContractForUpload}/${file.name}`;
+      await uploadContractDocument(selectedContractForUpload, documentPath);
+      setIsUploadModalOpen(false);
+      setSelectedContractForUpload(null);
+      toast({
+        title: "Success",
+        description: "Contract document uploaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload contract document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Modal handlers
+  const openCreateModal = () => {
+    clearSelectedContract();
+    setIsCreateModalOpen(true);
+  };
+
+  const openEditModal = (contract: any) => {
+    fetchContractById(contract.id);
     setIsEditModalOpen(true);
   };
 
-  const handleViewContract = (contract: Contract) => {
-    closeAllModals();
-    setSelectedContract(contract);
+  const openViewModal = (contract: any) => {
+    fetchContractById(contract.id);
     setIsViewModalOpen(true);
   };
 
-  const handleDeleteContract = (contract: Contract) => {
-    closeAllModals();
-    setContractToDelete(contract);
-    setDeleteConfirmOpen(true);
+  const openUploadModal = (contractId: string) => {
+    setSelectedContractForUpload(contractId);
+    setIsUploadModalOpen(true);
   };
 
-  const confirmDeleteContract = async () => {
-    if (!contractToDelete) return;
+  // Utility functions
+  const formatDate = (dateString: string | undefined): string => {
+    if (!dateString) return 'Not set';
     try {
-      await deleteContractMutation({
-        variables: { id: contractToDelete.id },
-      });
-
-      toast.success(t('contracts.contractDeleted'));
-      refetch();
+      return format(new Date(dateString), 'MMM dd, yyyy');
     } catch (error) {
-      toast.error(`${t('common.error')}: ${error instanceof Error ? error.message : t('common.unknownError')}`);
-    }
-    setDeleteConfirmOpen(false);
-    setContractToDelete(null);
-  };
-
-  const handleContractFormSubmit = async (contractData: ContractFormData) => {
-    try {
-      if (contractData.id) {
-        // Update existing contract
-        await updateContractMutation({
-          variables: {
-            id: contractData.id,
-            input: {
-              roomId: contractData.roomId,
-              renterIds: contractData.renterIds,
-              startDate: contractData.startDate,
-              endDate: contractData.endDate,
-              contractType: contractData.contractType || contractData.type,
-              amount: parseFloat(contractData.amount.toString()),
-              status: contractData.status || 'ACTIVE',
-            },
-          },
-        });
-        toast.success(t('contracts.contractUpdated'));
-      } else {
-        // Create new contract
-        await createContractMutation({
-          variables: {
-            input: {
-              roomId: contractData.roomId,
-              renterIds: contractData.renterIds,
-              startDate: contractData.startDate,
-              endDate: contractData.endDate,
-              contractType: contractData.contractType || contractData.type,
-              amount: parseFloat(contractData.amount.toString()),
-              status: 'ACTIVE',
-            },
-          },
-        });
-        toast.success(t('contracts.contractCreated'));
-      }
-      
-      refetch();
-      closeAllModals();
-    } catch (error) {
-      console.error('Contract operation error:', error);
-      toast.error(`${t('common.error')}: ${error instanceof Error ? error.message : t('common.unknownError')}`);
+      return 'Invalid date';
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
+  const getStatusBadge = (status: ContractStatus) => {
+    const variants = {
+      [ContractStatus.ACTIVE]: 'default',
+      [ContractStatus.DRAFT]: 'secondary',
+      [ContractStatus.EXPIRED]: 'destructive',
+      [ContractStatus.TERMINATED]: 'outline',
+    } as const;
+
+    return (
+      <Badge variant={variants[status] || 'secondary'}>
+        {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()}
+      </Badge>
+    );
   };
 
+  const getContractTypeBadge = (type: ContractType) => {
+    return (
+      <Badge variant="outline">
+        {type === ContractType.LONG_TERM ? 'Long Term' : 'Short Term'}
+      </Badge>
+    );
+  };
+  
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 justify-between md:flex-row md:items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-secondary-900 dark:text-gray-100">{t('navigation.contracts')}</h2>
-          <p className="text-secondary-500 dark:text-gray-400">{t('contracts.manageContracts')}</p>
-        </div>
-        <button
-          onClick={handleAddContract}
-          className="flex gap-2 items-center btn btn-primary"
-        >
-          <Plus size={16} />
-          <span>{t('contracts.addContract')}</span>
-        </button>
-      </div>
-      <div className="dashboard-card dark:bg-gray-800 dark:border-gray-700">
-        <SearchFilterBar
-          searchPlaceholder={t('contracts.searchPlaceholder')}
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          filters={[
-            {
-              type: 'dropdown',
-              label: t('contracts.status'),
-              value: filterStatus,
-              options: statusOptions,
-              onChange: setFilterStatus,
-            },
-            {
-              type: 'dropdown',
-              label: t('contracts.type'),
-              value: filterType,
-              options: typeOptions,
-              onChange: setFilterType,
-            },
-            {
-              type: 'dropdown',
-              label: t('common.sortBy'),
-              value: sortBy,
-              options: sortByOptions,
-              onChange: setSortBy,
-            },
-          ]}
-          rightContent={
-            <ViewModeSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
-          }
-        />
-
-        {contracts.length > 0 ? (
-          <ContractsList
-            contracts={contracts}
-            viewMode={viewMode}
-            onEditContract={handleEditContract}
-            onViewContract={handleViewContract}
-            onDeleteContract={handleDeleteContract}
-          />
-        ) : (
-          <div className="flex justify-center items-center h-40 text-secondary-500 dark:text-gray-400">
-            {t('common.noContractsFound')}
+    <div className="container mx-auto py-6 px-4 space-y-6">
+      {/* Page Header */}
+      <PageHeader
+        title="Contract Management"
+        description="Manage rental contracts, track agreements, and handle contract lifecycle"
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClearFilters}>
+              <Filter className="mr-2 h-4 w-4" />
+              Clear Filters
+            </Button>
+            <RoleGuard allowedRoles={['ADMIN']}>
+              <Button onClick={openCreateModal}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Contract
+              </Button>
+            </RoleGuard>
           </div>
-        )}
+        }
+      />
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Contracts</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pagination?.totalItems || 0}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Contracts</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {contracts.filter(c => c.status === ContractStatus.ACTIVE).length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {expiringContracts.length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${contracts
+                .filter(c => c.status === ContractStatus.ACTIVE)
+                .reduce((sum, c) => sum + c.monthlyRent, 0)
+                .toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Add Contract Form */}
-      {isAddModalOpen && (
-        <Modal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          title={t('contracts.addContract')}
-          size="lg"
-        >
-          <ContractForm
-            onClose={() => setIsAddModalOpen(false)}
-            onSubmit={handleContractFormSubmit}
-          />
-        </Modal>
+      {/* Search and Filters */}
+      <SearchFilterBar
+        searchPlaceholder="Search contracts by renter name, room number..."
+        onSearch={handleSearch}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: '', label: 'All Status' },
+              { value: ContractStatus.ACTIVE, label: 'Active' },
+              { value: ContractStatus.DRAFT, label: 'Draft' },
+              { value: ContractStatus.EXPIRED, label: 'Expired' },
+              { value: ContractStatus.TERMINATED, label: 'Terminated' },
+            ],
+            value: statusFilter,
+            onChange: (value) => handleFilterChange('status', value),
+          },
+          {
+            key: 'type',
+            label: 'Type',
+            options: [
+              { value: '', label: 'All Types' },
+              { value: ContractType.LONG_TERM, label: 'Long Term' },
+              { value: ContractType.SHORT_TERM, label: 'Short Term' },
+            ],
+            value: typeFilter,
+            onChange: (value) => handleFilterChange('type', value),
+          },
+        ]}
+      />
+
+      {/* Error State */}
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <p>Error loading contracts: {error}</p>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Edit Contract Form */}
-      {isEditModalOpen && selectedContract && (
-        <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          title={t('contracts.editContract')}
-          size="lg"
-        >
-          <ContractForm
-            onClose={() => setIsEditModalOpen(false)}
-            onSubmit={handleContractFormSubmit}
-            editData={selectedContract}
-          />
-        </Modal>
-      )}
-
-      {/* View Contract Modal */}
-      {selectedContract && (
-        <Modal
-          isOpen={isViewModalOpen}
-          onClose={() => {
-            setIsViewModalOpen(false);
-            setSelectedContract(null);
-          }}
-          title={t('contracts.contractDetails')}
-          size="lg"
-        >
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <p className="text-sm text-secondary-500">{t('contracts.type')}</p>
-                <p className="font-medium">
-                  {selectedContract.type === 'LONG_TERM' ? t('contracts.longTerm') : t('contracts.shortTerm')}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('contracts.status')}</p>
-                <div>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                      ${selectedContract.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                        selectedContract.status === 'EXPIRED' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}
+      {/* Expiring Contracts Alert */}
+      {expiringContracts.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="text-orange-800 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Contracts Expiring Soon
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {expiringContracts.slice(0, 3).map((contract) => (
+                <div key={contract.id} className="flex items-center justify-between p-2 bg-white rounded">
+                  <div>
+                    <p className="font-medium">{contract.renter?.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Room {contract.room?.number} • Expires {formatDate(contract.endDate)}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleRenewContract(contract.id, 
+                      new Date(new Date(contract.endDate).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+                      contract.monthlyRent
+                    )}
                   >
-                    {t(`contracts.${selectedContract.status.toLowerCase()}`)}
-                  </span>
+                    Renew
+                  </Button>
                 </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('contracts.renter')}</p>
-                <p className="font-medium">{selectedContract.renter.name}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('contracts.room')}</p>
-                <p className="font-medium">{selectedContract.room.number} {selectedContract.room.name}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('contracts.startDate')}</p>
-                <p className="font-medium">{formatDate(selectedContract.startDate)}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('contracts.endDate')}</p>
-                <p className="font-medium">{formatDate(selectedContract.endDate)}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('contracts.amount')}</p>
-                <p className="font-medium">${selectedContract.rentAmount}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('contracts.deposit')}</p>
-                <p className="font-medium">${selectedContract.depositAmount}</p>
-              </div>
+              ))}
+              {expiringContracts.length > 3 && (
+                <p className="text-sm text-muted-foreground">
+                  And {expiringContracts.length - 3} more contracts expiring soon...
+                </p>
+              )}
             </div>
-
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  handleEditContract(selectedContract);
-                }}
-                className="px-4 py-2 text-white rounded-md bg-primary-500 hover:bg-primary-600"
-              >
-                {t('contracts.editContract')}
-              </button>
-            </div>
-          </div>
-        </Modal>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmOpen && (
-        <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-40">
-          <div className="p-6 w-full max-w-sm bg-white rounded-lg shadow-lg">
-            <h3 className="mb-4 text-lg font-semibold">{t('common.confirmDelete')}</h3>
-            <p>{t('contracts.confirmDeleteContract')}</p>
-            <div className="flex gap-3 justify-end mt-6">
-              <button
-                className="px-4 py-2 rounded-md border border-gray-300 text-secondary-700 hover:bg-gray-50"
-                onClick={() => { setDeleteConfirmOpen(false); setContractToDelete(null); }}
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                className="px-4 py-2 text-white rounded-md bg-danger-500 hover:bg-danger-600"
-                onClick={confirmDeleteContract}
-              >
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Contracts List */}
+      <ContractList
+        contracts={contracts}
+        isLoading={isLoading}
+        onView={openViewModal}
+        onEdit={openEditModal}
+        onDelete={handleDeleteContract}
+        onTerminate={handleTerminateContract}
+        onUploadDocument={openUploadModal}
+        onSort={handleSortChange}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        pagination={pagination}
+        onPageChange={setCurrentPage}
+        currentPage={currentPage}
+      />
+
+      {/* Modals */}
+      <ContractFormModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateContract}
+        title="Create New Contract"
+        rooms={rooms}
+        renters={renters}
+        isLoading={isLoading || roomsLoading || rentersLoading}
+      />
+
+      <ContractFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleUpdateContract}
+        title="Edit Contract"
+        contract={selectedContract}
+        rooms={rooms}
+        renters={renters}
+        isLoading={isLoading || roomsLoading || rentersLoading}
+      />
+
+      <ContractDetailsModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        contract={selectedContract}
+        onEdit={() => {
+          setIsViewModalOpen(false);
+          setIsEditModalOpen(true);
+        }}
+        onTerminate={handleTerminateContract}
+        onRenew={handleRenewContract}
+      />
+
+      <DocumentUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+          setSelectedContractForUpload(null);
+        }}
+        onUpload={handleDocumentUpload}
+        title="Upload Contract Document"
+      />
     </div>
   );
 };
 
-export default ContractsPage;
+export default ContractsPage; 

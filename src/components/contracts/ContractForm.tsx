@@ -1,449 +1,405 @@
-import React from 'react';
-import { CalendarIcon } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { Calendar as CalendarComponent } from '../ui/calendar';
-import { useQuery } from '@apollo/client';
-import { GET_AVAILABLE_ROOMS, GET_RENTERS } from '@/providers/RenterProvider';
+import React, { useState, useEffect } from 'react';
+import { Contract, ContractStatus, ContractType, Room, Renter } from '../../utils/apiClient';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Calendar, DollarSign, FileText, User, Building } from 'lucide-react';
+import { format, addMonths } from 'date-fns';
 
-interface Room {
-  id: string;
-  number: string;
-  status: string;
-}
-
-interface Renter {
-  id: string;
-  name: string;
-  phone: string;
-}
-
-interface ContractInput {
-  id?: string;
+interface ContractFormData {
+  renterId: string;
   roomId: string;
-  room?: Room;
-  renterIds: string[];
-  renters?: Array<{ id: string; name: string }>;
   startDate: string;
   endDate: string;
-  contractType: string;
-  type?: string;
-  status?: string;
-  amount: number;
+  monthlyRent: number;
+  securityDeposit: number;
+  status: ContractStatus;
+  contractType: ContractType;
+  terms: string;
 }
 
 interface ContractFormProps {
-  onClose: () => void;
-  editData?: Record<string, any>;
-  onSubmit: (contract: ContractInput) => void;
+  contract?: Contract | null;
+  rooms: Room[];
+  renters: Renter[];
+  onSubmit: (data: ContractFormData) => void;
+  onCancel: () => void;
+  isLoading?: boolean;
 }
 
 const ContractForm: React.FC<ContractFormProps> = ({
-  onClose,
-  editData,
+  contract,
+  rooms,
+  renters,
   onSubmit,
+  onCancel,
+  isLoading = false,
 }) => {
-  const isEditMode = !!editData;
-
-  const [roomSelectionOpen, setRoomSelectionOpen] = React.useState(false);
-  const [renterSelectionOpen, setRenterSelectionOpen] = React.useState(false);
-
-  const [selectedRoomId, setSelectedRoomId] = React.useState<string>('');
-  const [selectedRenterIds, setSelectedRenterIds] = React.useState<string[]>([]);
-  const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
-  const [contractType, setContractType] = React.useState<'Short Term' | 'Long Term'>('Short Term');
-  const [amount, setAmount] = React.useState<string>('');
-  const [termMonths, setTermMonths] = React.useState<number>(1);
-
-  const [startDateCalendarOpen, setStartDateCalendarOpen] = React.useState(false);
-  const [endDateCalendarOpen, setEndDateCalendarOpen] = React.useState(false);
-
-  // Fetch available rooms
-  const { data: roomsData, loading: roomsLoading } = useQuery(GET_AVAILABLE_ROOMS);
-  const rooms = roomsData?.rooms?.nodes || [];
-
-  // Fetch renters
-  const { data: rentersData, loading: rentersLoading } = useQuery(GET_RENTERS, {
-    variables: { limit: 100 }
+  const [formData, setFormData] = useState<ContractFormData>({
+    renterId: contract?.renterId || '',
+    roomId: contract?.roomId || '',
+    startDate: contract?.startDate ? format(new Date(contract.startDate), 'yyyy-MM-dd') : '',
+    endDate: contract?.endDate ? format(new Date(contract.endDate), 'yyyy-MM-dd') : '',
+    monthlyRent: contract?.monthlyRent || 0,
+    securityDeposit: contract?.securityDeposit || 0,
+    status: contract?.status || ContractStatus.DRAFT,
+    contractType: contract?.contractType || ContractType.LONG_TERM,
+    terms: contract?.terms || '',
   });
-  const renters = rentersData?.renters?.nodes || [];
 
-  // Set initial values if in edit mode
-  React.useEffect(() => {
-    if (editData) {
-      setSelectedRoomId(editData.roomId);
-      setSelectedRenterIds(editData.renterIds || (editData.renters ? editData.renters.map((r: Renter) => r.id) : []) || []);
-      setStartDate(editData.startDate ? new Date(editData.startDate) : undefined);
-      setEndDate(editData.endDate ? new Date(editData.endDate) : undefined);
-      setContractType(editData.type === 'LONG_TERM' || editData.contractType === 'LONG_TERM' 
-        ? 'Long Term' : 'Short Term');
-      setAmount(editData.amount?.toString() || editData.rentAmount?.toString() || '');
+  const [errors, setErrors] = useState<Partial<Record<keyof ContractFormData, string>>>({});
 
-      // Calculate term months for long term contracts
-      if (editData.type === 'LONG_TERM' || editData.contractType === 'LONG_TERM') {
-        const start = new Date(editData.startDate);
-        const end = new Date(editData.endDate);
-        const diffMonths = (end.getFullYear() - start.getFullYear()) * 12 +
-                           (end.getMonth() - start.getMonth());
-        setTermMonths(diffMonths);
+  // Auto-calculate end date for long-term contracts
+  useEffect(() => {
+    if (formData.contractType === ContractType.LONG_TERM && formData.startDate && !contract) {
+      const startDate = new Date(formData.startDate);
+      if (!isNaN(startDate.getTime())) {
+        const endDate = addMonths(startDate, 12);
+        setFormData(prev => ({
+          ...prev,
+          endDate: format(endDate, 'yyyy-MM-dd')
+        }));
       }
     }
-  }, [editData]);
+  }, [formData.startDate, formData.contractType, contract]);
 
-  // Calculate end date based on start date and term length for long term contracts
-  React.useEffect(() => {
-    if (startDate && contractType === 'Long Term') {
-      const newEndDate = new Date(startDate);
-      newEndDate.setMonth(newEndDate.getMonth() + termMonths);
-      setEndDate(newEndDate);
+  // Auto-set security deposit based on monthly rent
+  useEffect(() => {
+    if (formData.monthlyRent > 0 && !contract) {
+      setFormData(prev => ({
+        ...prev,
+        securityDeposit: formData.monthlyRent * 2 // Default to 2 months rent
+      }));
     }
-  }, [startDate, termMonths, contractType]);
+  }, [formData.monthlyRent, contract]);
 
-  const handleRoomSelect = (roomId: string) => {
-    setSelectedRoomId(roomId);
-    setRoomSelectionOpen(false);
-  };
+  const handleInputChange = (field: keyof ContractFormData, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
 
-  const handleRenterToggle = (renterId: string) => {
-    if (selectedRenterIds.includes(renterId)) {
-      setSelectedRenterIds(selectedRenterIds.filter(id => id !== renterId));
-    } else {
-      setSelectedRenterIds([...selectedRenterIds, renterId]);
-    }
-  };
-
-  const handleStartDateSelect = (date: Date) => {
-    setStartDate(date);
-    setStartDateCalendarOpen(false);
-
-    // Adjust end date if needed
-    if (contractType === 'Long Term') {
-      const newEndDate = new Date(date);
-      newEndDate.setMonth(newEndDate.getMonth() + termMonths);
-      setEndDate(newEndDate);
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined,
+      }));
     }
   };
 
-  const handleEndDateSelect = (date: Date) => {
-    setEndDate(date);
-    setEndDateCalendarOpen(false);
-  };
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof ContractFormData, string>> = {};
 
-  const handleTermMonthsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const months = parseInt(e.target.value);
-    setTermMonths(months);
-
-    if (startDate) {
-      const newEndDate = new Date(startDate);
-      newEndDate.setMonth(newEndDate.getMonth() + months);
-      setEndDate(newEndDate);
+    if (!formData.renterId) {
+      newErrors.renterId = 'Please select a renter';
     }
-  };
 
-  const formatDate = (date?: Date) => {
-    if (!date) return '';
-    return date.toISOString().split('T')[0];
+    if (!formData.roomId) {
+      newErrors.roomId = 'Please select a room';
+    }
+
+    if (!formData.startDate) {
+      newErrors.startDate = 'Start date is required';
+    }
+
+    if (!formData.endDate) {
+      newErrors.endDate = 'End date is required';
+    }
+
+    if (formData.startDate && formData.endDate) {
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(formData.endDate);
+      
+      if (endDate <= startDate) {
+        newErrors.endDate = 'End date must be after start date';
+      }
+    }
+
+    if (formData.monthlyRent <= 0) {
+      newErrors.monthlyRent = 'Monthly rent must be greater than 0';
+    }
+
+    if (formData.securityDeposit < 0) {
+      newErrors.securityDeposit = 'Security deposit cannot be negative';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!selectedRoomId) {
-      toast.error("Please select a room");
-      return;
-    }
-
-    if (selectedRenterIds.length === 0) {
-      toast.error("Please select at least one renter");
-      return;
-    }
-
-    if (!startDate) {
-      toast.error("Please select a start date");
-      return;
-    }
-
-    if (!endDate) {
-      toast.error("Please select an end date");
-      return;
-    }
-
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Contract amount must be greater than 0.");
-      return;
-    }
-
-    const selectedRoom = rooms.find((room: Room) => room.id === selectedRoomId);
     
-    const newContract: ContractInput = {
-      id: editData?.id,
-      roomId: selectedRoomId,
-      room: selectedRoom,
-      renterIds: selectedRenterIds,
-      type: contractType === 'Long Term' ? 'LONG_TERM' : 'SHORT_TERM',
-      contractType: contractType === 'Long Term' ? 'LONG_TERM' : 'SHORT_TERM',
-      status: 'ACTIVE',
-      startDate: formatDate(startDate),
-      endDate: formatDate(endDate),
-      amount: parseFloat(amount),
-      renters: selectedRenterIds.map(id => {
-        const renter = renters.find((r: Renter) => r.id === id);
-        return {
-          id,
-          name: renter?.name || '',
-        };
-      }),
-    };
-
-    onSubmit(newContract);
-    toast.success(`Contract ${isEditMode ? 'updated' : 'created'} successfully.`);
+    if (validateForm()) {
+      onSubmit(formData);
+    }
   };
 
-  if (roomsLoading || rentersLoading) {
-    return <div className="p-6 text-center">Loading resources...</div>;
-  }
-
-  const selectedRoom = rooms.find((room: Room) => room.id === selectedRoomId);
+  const selectedRoom = rooms.find(room => room.id === formData.roomId);
+  const selectedRenter = renters.find(renter => renter.id === formData.renterId);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
-        <div>
-          <label className="block mb-1 text-sm font-medium text-secondary-700" htmlFor="room">
-            Room <span className="text-red-500">*</span>
-          </label>
-
-          <div className="relative">
-            <button
-              type="button"
-              className="px-4 py-2 w-full text-left rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400 hover:bg-gray-50"
-              onClick={() => setRoomSelectionOpen(!roomSelectionOpen)}
-              disabled={isEditMode}
-            >
-              {selectedRoom ? `Room ${selectedRoom.number}` : 'Select a room'}
-            </button>
-
-            {roomSelectionOpen && !isEditMode && (
-              <div className="overflow-y-auto absolute z-10 mt-1 w-full max-h-60 bg-white rounded-md border border-gray-200 shadow-lg">
-                <div className="p-2">
-                  {rooms.map((room: Room) => (
-                    <button
-                      type="button"
-                      key={room.id}
-                      className="flex justify-between items-center px-3 py-2 w-full text-left rounded-md hover:bg-gray-100"
-                      onClick={() => handleRoomSelect(room.id)}
-                    >
-                      <div className="flex items-center">
-                        <div className="mr-2">
-                          <input
-                            type="radio"
-                            checked={selectedRoomId === room.id}
-                            onChange={() => {}}
-                            className="w-4 h-4 text-primary-600 focus:ring-primary-400"
-                          />
-                        </div>
-                        <span>Room {room.number}</span>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        room.status === 'AVAILABLE'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {room.status}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium text-secondary-700">
-            Renters <span className="text-red-500">*</span>
-          </label>
-
-          <div className="relative">
-            <button
-              type="button"
-              className="px-4 py-2 w-full text-left rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400 hover:bg-gray-50"
-              onClick={() => setRenterSelectionOpen(!renterSelectionOpen)}
-            >
-              {selectedRenterIds.length > 0
-                ? `${selectedRenterIds.length} renter(s) selected`
-                : 'Select renters'}
-            </button>
-
-            {renterSelectionOpen && (
-              <div className="overflow-y-auto absolute z-10 mt-1 w-full max-h-60 bg-white rounded-md border border-gray-200 shadow-lg">
-                <div className="p-2">
-                  {renters.map((renter: Renter) => (
-                    <div
-                      key={renter.id}
-                      className="flex items-center px-3 py-2 w-full text-left rounded-md cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleRenterToggle(renter.id)}
-                    >
-                      <div className="mr-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedRenterIds.includes(renter.id)}
-                          onChange={() => {}}
-                          className="w-4 h-4 rounded text-primary-600 focus:ring-primary-400"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{renter.name}</p>
-                        <p className="text-xs text-secondary-500">{renter.phone}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium text-secondary-700">
-            Start Date <span className="text-red-500">*</span>
-          </label>
-
-          <div className="relative">
-            <div className="flex items-center rounded-md border border-gray-300 focus-within:ring-2 focus-within:ring-primary-400">
-              <input
-                type="text"
-                value={formatDate(startDate)}
-                readOnly
-                placeholder="YYYY-MM-DD"
-                className="px-4 py-2 w-full rounded-md focus:outline-none"
-              />
-              <button
-                type="button"
-                className="px-3 text-secondary-500"
-                onClick={() => setStartDateCalendarOpen(!startDateCalendarOpen)}
-              >
-                <CalendarIcon size={18} />
-              </button>
-            </div>
-
-            {startDateCalendarOpen && (
-              <div className="absolute right-0 z-20 mt-1">
-                <CalendarComponent
-                  onSelectDate={handleStartDateSelect}
-                  initialDate={startDate}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium text-secondary-700">
-            End Date <span className="text-red-500">*</span>
-          </label>
-
-          <div className="relative">
-            <div className="flex items-center rounded-md border border-gray-300 focus-within:ring-2 focus-within:ring-primary-400">
-              <input
-                type="text"
-                value={formatDate(endDate)}
-                readOnly
-                placeholder="YYYY-MM-DD"
-                className="px-4 py-2 w-full rounded-md focus:outline-none"
-                disabled={contractType === 'Long Term'}
-              />
-              <button
-                type="button"
-                className={`px-3 ${contractType === 'Long Term' ? 'text-secondary-300' : 'text-secondary-500'}`}
-                onClick={() => contractType !== 'Long Term' && setEndDateCalendarOpen(!endDateCalendarOpen)}
-                disabled={contractType === 'Long Term'}
-              >
-                <CalendarIcon size={18} />
-              </button>
-            </div>
-
-            {endDateCalendarOpen && contractType !== 'Long Term' && (
-              <div className="absolute right-0 z-20 mt-1">
-                <CalendarComponent
-                  onSelectDate={handleEndDateSelect}
-                  initialDate={endDate}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium text-secondary-700" htmlFor="contractType">
-            Contract Type <span className="text-red-500">*</span>
-          </label>
-
-          <select
-            id="contractType"
-            value={contractType}
-            onChange={(e) => setContractType(e.target.value as 'Short Term' | 'Long Term')}
-            className="px-4 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400"
+      {/* Contract Type and Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="contractType">Contract Type</Label>
+          <Select
+            value={formData.contractType}
+            onValueChange={(value) => handleInputChange('contractType', value as ContractType)}
+            disabled={isLoading}
           >
-            <option value="Long Term">Long Term</option>
-            <option value="Short Term">Short Term</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="Select contract type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ContractType.LONG_TERM}>Long Term (12+ months)</SelectItem>
+              <SelectItem value={ContractType.SHORT_TERM}>Short Term (&lt; 12 months)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {contractType === 'Long Term' && (
-          <div>
-            <label className="block mb-1 text-sm font-medium text-secondary-700" htmlFor="termMonths">
-              Term Length <span className="text-red-500">*</span>
-            </label>
+        <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <Select
+            value={formData.status}
+            onValueChange={(value) => handleInputChange('status', value as ContractStatus)}
+            disabled={isLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ContractStatus.DRAFT}>Draft</SelectItem>
+              <SelectItem value={ContractStatus.ACTIVE}>Active</SelectItem>
+              <SelectItem value={ContractStatus.EXPIRED}>Expired</SelectItem>
+              <SelectItem value={ContractStatus.TERMINATED}>Terminated</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-            <select
-              id="termMonths"
-              value={termMonths}
-              onChange={handleTermMonthsChange}
-              className="px-4 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400"
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => (
-                <option key={month} value={month}>
-                  {month} {month === 1 ? 'month' : 'months'}
-                </option>
+      <Separator />
+
+      {/* Renter and Room Selection */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="renterId">Renter *</Label>
+          <Select
+            value={formData.renterId}
+            onValueChange={(value) => handleInputChange('renterId', value)}
+            disabled={isLoading}
+          >
+            <SelectTrigger className={errors.renterId ? 'border-destructive' : ''}>
+              <SelectValue placeholder="Select a renter" />
+            </SelectTrigger>
+            <SelectContent>
+              {renters.map((renter) => (
+                <SelectItem key={renter.id} value={renter.id}>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <div>
+                      <p className="font-medium">{renter.name}</p>
+                      <p className="text-sm text-muted-foreground">{renter.email}</p>
+                    </div>
+                  </div>
+                </SelectItem>
               ))}
-            </select>
+            </SelectContent>
+          </Select>
+          {errors.renterId && (
+            <p className="text-sm text-destructive">{errors.renterId}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="roomId">Room *</Label>
+          <Select
+            value={formData.roomId}
+            onValueChange={(value) => handleInputChange('roomId', value)}
+            disabled={isLoading}
+          >
+            <SelectTrigger className={errors.roomId ? 'border-destructive' : ''}>
+              <SelectValue placeholder="Select a room" />
+            </SelectTrigger>
+            <SelectContent>
+              {rooms.filter(room => room.status === 'AVAILABLE' || room.id === formData.roomId).map((room) => (
+                <SelectItem key={room.id} value={room.id}>
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    <div>
+                      <p className="font-medium">Room {room.number}</p>
+                      <p className="text-sm text-muted-foreground">{room.name} - ${room.price}/month</p>
+                    </div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.roomId && (
+            <p className="text-sm text-destructive">{errors.roomId}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Selected Details Preview */}
+      {(selectedRoom || selectedRenter) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Contract Preview</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {selectedRenter && (
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span><strong>Renter:</strong> {selectedRenter.name}</span>
+              </div>
+            )}
+            {selectedRoom && (
+              <div className="flex items-center gap-2 text-sm">
+                <Building className="h-4 w-4 text-muted-foreground" />
+                <span><strong>Room:</strong> {selectedRoom.number} - {selectedRoom.name}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <Separator />
+
+      {/* Dates */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="startDate">Start Date *</Label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="startDate"
+              type="date"
+              value={formData.startDate}
+              onChange={(e) => handleInputChange('startDate', e.target.value)}
+              className={`pl-10 ${errors.startDate ? 'border-destructive' : ''}`}
+              disabled={isLoading}
+            />
           </div>
-        )}
+          {errors.startDate && (
+            <p className="text-sm text-destructive">{errors.startDate}</p>
+          )}
+        </div>
 
-        <div>
-          <label className="block mb-1 text-sm font-medium text-secondary-700" htmlFor="amount">
-            Amount (USD) <span className="text-red-500">*</span>
-          </label>
+        <div className="space-y-2">
+          <Label htmlFor="endDate">End Date *</Label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="endDate"
+              type="date"
+              value={formData.endDate}
+              onChange={(e) => handleInputChange('endDate', e.target.value)}
+              className={`pl-10 ${errors.endDate ? 'border-destructive' : ''}`}
+              disabled={isLoading || formData.contractType === ContractType.LONG_TERM}
+            />
+          </div>
+          {errors.endDate && (
+            <p className="text-sm text-destructive">{errors.endDate}</p>
+          )}
+          {formData.contractType === ContractType.LONG_TERM && (
+            <p className="text-sm text-muted-foreground">
+              End date is automatically set to 12 months from start date for long-term contracts
+            </p>
+          )}
+        </div>
+      </div>
 
-          <input
-            type="number"
-            id="amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="e.g. 1000"
-            min="0"
-            step="0.01"
-            className="px-4 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400"
+      <Separator />
+
+      {/* Financial Details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="monthlyRent">Monthly Rent *</Label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="monthlyRent"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.monthlyRent}
+              onChange={(e) => handleInputChange('monthlyRent', parseFloat(e.target.value) || 0)}
+              className={`pl-10 ${errors.monthlyRent ? 'border-destructive' : ''}`}
+              disabled={isLoading}
+              placeholder="0.00"
+            />
+          </div>
+          {errors.monthlyRent && (
+            <p className="text-sm text-destructive">{errors.monthlyRent}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="securityDeposit">Security Deposit</Label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="securityDeposit"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.securityDeposit}
+              onChange={(e) => handleInputChange('securityDeposit', parseFloat(e.target.value) || 0)}
+              className={`pl-10 ${errors.securityDeposit ? 'border-destructive' : ''}`}
+              disabled={isLoading}
+              placeholder="0.00"
+            />
+          </div>
+          {errors.securityDeposit && (
+            <p className="text-sm text-destructive">{errors.securityDeposit}</p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Typically 1-2 months of rent
+          </p>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Terms and Conditions */}
+      <div className="space-y-2">
+        <Label htmlFor="terms">Terms and Conditions</Label>
+        <div className="relative">
+          <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Textarea
+            id="terms"
+            value={formData.terms}
+            onChange={(e) => handleInputChange('terms', e.target.value)}
+            className="pl-10 min-h-[100px]"
+            disabled={isLoading}
+            placeholder="Enter contract terms, conditions, and special agreements..."
           />
         </div>
       </div>
 
-      <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-        <button
+      {/* Form Actions */}
+      <div className="flex justify-end gap-3 pt-4">
+        <Button
           type="button"
-          onClick={onClose}
-          className="px-4 py-2 rounded-md border border-gray-300 text-secondary-700 hover:bg-gray-50"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isLoading}
         >
           Cancel
-        </button>
-
-        <button
+        </Button>
+        <Button
           type="submit"
-          className="px-6 py-2 text-white rounded-md bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-400"
+          disabled={isLoading}
         >
-          {isEditMode ? 'Update Contract' : 'Create Contract'}
-        </button>
+          {isLoading ? 'Saving...' : contract ? 'Update Contract' : 'Create Contract'}
+        </Button>
       </div>
     </form>
   );

@@ -20,4 +20,28 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false,
+        rewrite: path => path,
+        configure: proxy => {
+          proxy.on('error', err => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req) => {
+            // Add CORS headers to the request
+            proxyReq.setHeader('Origin', 'http://localhost:5173');
+            console.log('Proxying request to:', req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('Received proxied response from:', req.url, 'status:', proxyRes.statusCode);
+          });
+        }
+      }
+    }
+  }
 });

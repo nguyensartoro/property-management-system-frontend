@@ -1,348 +1,557 @@
-import React, { useEffect } from 'react';
-import { Plus } from 'lucide-react';
-import { useQuery, useMutation } from '@apollo/client';
-import { toast } from 'react-hot-toast';
-import { useLocation, useNavigate } from 'react-router-dom';
-import ServicesList from '../components/services/ServicesList';
-import ViewModeSwitcher from '../components/shared/ViewModeSwitcher';
-import SearchFilterBar from '../components/shared/SearchFilterBar';
-import { GET_SERVICES, DELETE_SERVICE } from '@/providers/ServiceProvider';
-import Modal from '../components/shared/Modal';
-import { useLanguage } from '../utils/languageContext';
-import ServicesForm from '@/components/services/ServicesForm';
+import React from 'react';
+import useApi from '../hooks/useApi';
+import { serviceService, FeeType } from '../utils/apiClient';
+import { useToast } from '../hooks/use-toast';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
-type FeeType = 'ONE_TIME' | 'MONTHLY' | 'YEARLY';
+import { Edit, Eye, Trash2, Plus, Search, Package } from 'lucide-react';
 
-interface Service {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  fee: number;
-  feeType: FeeType;
+// Service form component for creating/editing services
+interface ServiceFormProps {
+  service?: any;
+  onSubmit: (data: any) => void;
+  isLoading?: boolean;
 }
 
-type SelectOption = { value: string; label: string };
-
-const ServicesPage: React.FC = () => {
-  const { t } = useLanguage();
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
-  const [selectedService, setSelectedService] = React.useState<Service | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
-  const [serviceToDelete, setServiceToDelete] = React.useState<Service | null>(null);
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [filterFeeType, setFilterFeeType] = React.useState<string>('All');
-  const [sortBy, setSortBy] = React.useState<string>('name');
-  const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('list');
-  const currentPage = 1; // Fixed page for now since pagination is not yet implemented
-  const itemsPerPage = 10;
-
-  // Get URL search params and navigate function
-  const location = useLocation();
-  const navigate = useNavigate();
-  const searchParams = new URLSearchParams(location.search);
-  const shouldOpenAddModal = searchParams.get('openAddModal') === 'true';
-
-  // Check URL parameter and open add modal if needed
-  useEffect(() => {
-    if (shouldOpenAddModal) {
-      setIsAddModalOpen(true);
-      // Remove the parameter from the URL
-      searchParams.delete('openAddModal');
-      navigate({ search: searchParams.toString() }, { replace: true });
-    }
-  }, [shouldOpenAddModal, navigate, searchParams]);
-
-  const { data, loading, error, refetch } = useQuery(GET_SERVICES, {
-    variables: {
-      page: currentPage,
-      limit: itemsPerPage,
-      searchText: searchTerm || undefined,
-      sortBy: sortBy === 'name-asc' ? 'name' :
-              sortBy === 'name-desc' ? 'name' :
-              sortBy === 'fee-high' ? 'fee' :
-              sortBy === 'fee-low' ? 'fee' : undefined,
-      sortOrder: sortBy === 'name-asc' ? 'asc' :
-                 sortBy === 'name-desc' ? 'desc' :
-                 sortBy === 'fee-low' ? 'asc' : 'desc',
-    },
-    fetchPolicy: 'cache-and-network',
+const ServiceForm: React.FC<ServiceFormProps> = ({ 
+  service = null, 
+  onSubmit, 
+  isLoading = false 
+}) => {
+  const [formData, setFormData] = React.useState({
+    name: service?.name || '',
+    description: service?.description || '',
+    fee: service?.fee || 0,
+    feeType: service?.feeType || FeeType.MONTHLY,
+    icon: service?.icon || '',
+    active: service?.active ?? true,
   });
 
-  const [deleteServiceMutation] = useMutation(DELETE_SERVICE);
-
-  const closeAllModals = () => {
-    setIsAddModalOpen(false);
-    setIsEditModalOpen(false);
-    setIsViewModalOpen(false);
-    setDeleteConfirmOpen(false);
-    setSelectedService(null);
-    setServiceToDelete(null);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === 'fee' ? Number(value) : value,
+    }));
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-64">{t('common.loading')}...</div>;
-  }
-
-  if (error) {
-    return <div className="flex justify-center items-center h-64 text-red-500">{t('common.errorLoading')}: {error.message}</div>;
-  }
-
-  const services = data?.services?.nodes || [];
-
-  const filteredServices = services.filter((service: Service) => {
-    const matchesFeeType = filterFeeType === 'All' ||
-      (filterFeeType === 'ONE_TIME' && service.feeType === 'ONE_TIME') ||
-      (filterFeeType === 'MONTHLY' && service.feeType === 'MONTHLY') ||
-      (filterFeeType === 'YEARLY' && service.feeType === 'YEARLY');
-    return matchesFeeType;
-  });
-
-  const feeTypeCount = {
-    'All': services.length,
-    'ONE_TIME': services.filter((service: Service) => service.feeType === 'ONE_TIME').length,
-    'MONTHLY': services.filter((service: Service) => service.feeType === 'MONTHLY').length,
-    'YEARLY': services.filter((service: Service) => service.feeType === 'YEARLY').length,
+  const handleFeeTypeChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      feeType: value as FeeType,
+    }));
   };
 
-  const feeTypeOptions: SelectOption[] = [
-    { value: 'All', label: `${t('common.all')} (${feeTypeCount['All']})` },
-    { value: 'ONE_TIME', label: `${t('services.oneTime')} (${feeTypeCount['ONE_TIME']})` },
-    { value: 'MONTHLY', label: `${t('services.monthly')} (${feeTypeCount['MONTHLY']})` },
-    { value: 'YEARLY', label: `${t('services.yearly')} (${feeTypeCount['YEARLY']})` },
-  ];
-
-  const sortByOptions: SelectOption[] = [
-    { value: 'name-asc', label: t('services.nameAZ') },
-    { value: 'name-desc', label: t('services.nameZA') },
-    { value: 'fee-high', label: t('services.feeHighToLow') },
-    { value: 'fee-low', label: t('services.feeLowToHigh') },
-  ];
-
-  // CRUD handlers
-  const handleAddService = () => {
-    closeAllModals();
-    setIsAddModalOpen(true);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
-  const handleEditService = (service: Service) => {
-    closeAllModals();
-    setSelectedService(service);
-    setIsEditModalOpen(true);
-  };
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-sm font-medium">Name</label>
+          <Input
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            disabled={isLoading}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="fee" className="text-sm font-medium">Fee</label>
+          <Input
+            id="fee"
+            name="fee"
+            type="number"
+            value={formData.fee}
+            onChange={handleChange}
+            required
+            disabled={isLoading}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="feeType" className="text-sm font-medium">Fee Type</label>
+          <Select 
+            value={formData.feeType} 
+            onValueChange={handleFeeTypeChange}
+            disabled={isLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select fee type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={FeeType.ONE_TIME}>One Time</SelectItem>
+              <SelectItem value={FeeType.MONTHLY}>Monthly</SelectItem>
+              <SelectItem value={FeeType.YEARLY}>Yearly</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="icon" className="text-sm font-medium">Icon</label>
+          <Input
+            id="icon"
+            name="icon"
+            value={formData.icon}
+            onChange={handleChange}
+            placeholder="Icon name or URL"
+            disabled={isLoading}
+          />
+        </div>
+        
+        <div className="space-y-2 col-span-2">
+          <label htmlFor="description" className="text-sm font-medium">Description</label>
+          <Input
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            disabled={isLoading}
+          />
+        </div>
+      </div>
+      
+      <DialogFooter>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Saving...' : service ? 'Update Service' : 'Create Service'}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+};
 
-  const handleViewService = (service: Service) => {
-    closeAllModals();
-    setSelectedService(service);
-    setIsViewModalOpen(true);
-  };
+// Service details view component
+interface ServiceViewDialogProps {
+  service: any | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  const handleDeleteService = (service: Service) => {
-    closeAllModals();
-    setServiceToDelete(service);
-    setDeleteConfirmOpen(true);
-  };
+const ServiceViewDialog: React.FC<ServiceViewDialogProps> = ({ service, isOpen, onClose }) => {
+  if (!service) return null;
 
-  const confirmDeleteService = async () => {
-    if (!serviceToDelete) return;
-    try {
-      await deleteServiceMutation({
-        variables: { id: serviceToDelete.id },
-      });
-
-      toast.success(t('services.serviceDeleted').replace('{name}', serviceToDelete.name));
-      refetch();
-    } catch (error) {
-      toast.error(`${t('common.error')}: ${error instanceof Error ? error.message : t('common.unknownError')}`);
-    }
-    setDeleteConfirmOpen(false);
-    setServiceToDelete(null);
-  };
-
-  const handleServiceFormSubmit = () => {
-    refetch();
-    setIsAddModalOpen(false);
-    setIsEditModalOpen(false);
-  };
-
-  const getFeeTypeLabel = (feeType: FeeType): string => {
+  const getFeeTypeDisplay = (feeType: FeeType) => {
     switch (feeType) {
-      case 'ONE_TIME':
-        return t('services.oneTime');
-      case 'MONTHLY':
-        return t('services.monthly');
-      case 'YEARLY':
-        return t('services.yearly');
+      case FeeType.ONE_TIME:
+        return 'One Time';
+      case FeeType.MONTHLY:
+        return 'Monthly';
+      case FeeType.YEARLY:
+        return 'Yearly';
       default:
         return feeType;
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 justify-between md:flex-row md:items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-secondary-900 dark:text-gray-100">{t('navigation.services')}</h2>
-          <p className="text-secondary-500 dark:text-gray-400">{t('services.manageServices')}</p>
-        </div>
-        <button
-          onClick={handleAddService}
-          className="flex gap-2 items-center btn btn-primary"
-        >
-          <Plus size={16} />
-          <span>{t('services.addService')}</span>
-        </button>
-      </div>
-      <div className="dashboard-card dark:bg-gray-800 dark:border-gray-700">
-        <SearchFilterBar
-          searchPlaceholder={t('services.searchPlaceholder')}
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          filters={[
-            {
-              type: 'dropdown',
-              label: t('services.feeType'),
-              value: filterFeeType,
-              options: feeTypeOptions,
-              onChange: setFilterFeeType,
-            },
-            {
-              type: 'dropdown',
-              label: t('common.sortBy'),
-              value: sortBy,
-              options: sortByOptions,
-              onChange: setSortBy,
-            },
-          ]}
-          rightContent={
-            <ViewModeSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
-          }
-        />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Service Details</DialogTitle>
+          <DialogDescription>
+            Detailed information about the service
+          </DialogDescription>
+        </DialogHeader>
 
-        {filteredServices.length > 0 ? (
-          <ServicesList
-            services={filteredServices}
-            viewMode={viewMode}
-            onViewService={handleViewService}
-            onEditService={handleEditService}
-            onDeleteService={handleDeleteService}
-            getFeeTypeLabel={getFeeTypeLabel}
-          />
-        ) : (
-          <div className="flex justify-center items-center h-40 text-secondary-500 dark:text-gray-400">
-            {t('common.noServicesFound')}
+        <div className="py-4 space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+              {service.icon ? (
+                <img src={service.icon} alt={service.name} className="h-6 w-6" />
+              ) : (
+                <Package className="h-6 w-6 text-blue-500" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">{service.name}</h3>
+              {service.description && <p className="text-gray-500">{service.description}</p>}
+            </div>
           </div>
-        )}
+          
+          <div className="grid grid-cols-2 gap-4 text-sm border-t pt-4">
+            <div>
+              <p className="text-gray-500 mb-1">Fee</p>
+              <p>${service.fee.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 mb-1">Fee Type</p>
+              <p>{getFeeTypeDisplay(service.feeType)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 mb-1">Status</p>
+              <p>
+                {service.active ? (
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Active</span>
+                ) : (
+                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Inactive</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Main component
+const ServicesPage: React.FC = () => {
+  const { toast } = useToast();
+  
+  // State
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 10;
+  
+  const [selectedService, setSelectedService] = React.useState<any>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
+  
+  // Fetch services data
+  const {
+    data: servicesData,
+    loading: servicesLoading,
+    error: servicesError,
+    refetch: refetchServices,
+  } = useApi(
+    () => serviceService.getAllServices(currentPage, itemsPerPage, searchTerm),
+    [currentPage, itemsPerPage, searchTerm]
+  );
+  
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    refetchServices();
+  };
+  
+  // Handle service creation
+  const handleCreateService = async (formData: any) => {
+    try {
+      await serviceService.createService(formData);
+      setIsCreateModalOpen(false);
+      toast({
+        title: "Success",
+        description: "Service created successfully",
+      });
+      refetchServices();
+    } catch (error) {
+      console.error('Error creating service:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create service",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Handle service update
+  const handleUpdateService = async (formData: any) => {
+    try {
+      await serviceService.updateService(selectedService.id, formData);
+      setIsEditModalOpen(false);
+      toast({
+        title: "Success",
+        description: "Service updated successfully",
+      });
+      refetchServices();
+    } catch (error) {
+      console.error('Error updating service:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update service",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Handle service deletion
+  const handleDeleteService = async (id: string) => {
+    if (confirm('Are you sure you want to delete this service?')) {
+      try {
+        await serviceService.deleteService(id);
+        toast({
+          title: "Success",
+          description: "Service deleted successfully",
+        });
+        refetchServices();
+      } catch (error) {
+        console.error('Error deleting service:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete service",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+  
+  // Open edit modal
+  const openEditModal = (service: any) => {
+    setSelectedService(service);
+    setIsEditModalOpen(true);
+  };
+  
+  // Open view modal
+  const openViewModal = (service: any) => {
+    setSelectedService(service);
+    setIsViewModalOpen(true);
+  };
+  
+  // Fee type display helper
+  const getFeeTypeDisplay = (feeType: FeeType) => {
+    switch (feeType) {
+      case FeeType.ONE_TIME:
+        return 'One Time';
+      case FeeType.MONTHLY:
+        return 'Monthly';
+      case FeeType.YEARLY:
+        return 'Yearly';
+      default:
+        return feeType;
+    }
+  };
+  
+  return (
+    <div className="container mx-auto py-6 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Services</h1>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Service
+        </Button>
       </div>
-
-      {/* Add Service Form */}
-      {isAddModalOpen && (
-        <Modal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          title={t('services.addService')}
-          size="lg"
-        >
-          <ServicesForm
-            onClose={() => setIsAddModalOpen(false)}
-            onSubmit={handleServiceFormSubmit}
-          />
-        </Modal>
+      
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search services..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            <Button type="submit" className="shrink-0">Search</Button>
+          </form>
+        </CardContent>
+      </Card>
+      
+      {/* Error state */}
+      {servicesError && (
+        <Card className="mb-6 border-red-300">
+          <CardContent className="pt-6">
+            <p className="text-red-500">Error loading services: {servicesError.message}</p>
+          </CardContent>
+        </Card>
       )}
-
-      {/* Edit Service Form */}
-      {isEditModalOpen && selectedService && (
-        <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          title={t('services.editService')}
-          size="lg"
-        >
-          <ServiceForm
-            onClose={() => setIsEditModalOpen(false)}
-            onSubmit={handleServiceFormSubmit}
-            editData={selectedService}
-          />
-        </Modal>
+      
+      {/* Loading state */}
+      {servicesLoading && (
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Card key={index}>
+              <CardContent className="py-4">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
-
+      
+      {/* Services Table */}
+      {!servicesLoading && servicesData?.data && (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Service Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Fee</TableHead>
+                  <TableHead>Fee Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {servicesData.data.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No services found. Add your first service to get started.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  servicesData.data.map((service) => (
+                    <TableRow key={service.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {service.icon ? (
+                            <img src={service.icon} alt={service.name} className="h-5 w-5" />
+                          ) : (
+                            <Package className="h-5 w-5 text-gray-400" />
+                          )}
+                          {service.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>{service.description || '-'}</TableCell>
+                      <TableCell>${service.fee.toFixed(2)}</TableCell>
+                      <TableCell>{getFeeTypeDisplay(service.feeType)}</TableCell>
+                      <TableCell>
+                        {service.active ? (
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                            Inactive
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button size="icon" variant="ghost" onClick={() => openViewModal(service)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => openEditModal(service)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => handleDeleteService(service.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+          
+          {/* Pagination */}
+          {servicesData.pagination && servicesData.pagination.totalPages > 1 && (
+            <CardFooter className="flex justify-center py-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    />
+                  </PaginationItem>
+                  
+                  {[...Array(servicesData.pagination.totalPages)].map((_, i) => (
+                    <PaginationItem key={i} className={currentPage === i + 1 ? 'hidden md:inline-block' : 'hidden md:inline-block'}>
+                      <PaginationLink 
+                        onClick={() => setCurrentPage(i + 1)}
+                        isActive={currentPage === i + 1}
+                      >
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(Math.min(servicesData.pagination.totalPages, currentPage + 1))}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </CardFooter>
+          )}
+        </Card>
+      )}
+      
+      {/* Create Service Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Service</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to add a new service
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ServiceForm 
+            onSubmit={handleCreateService} 
+            isLoading={servicesLoading}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Service Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Service</DialogTitle>
+            <DialogDescription>
+              Update service information
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ServiceForm 
+            service={selectedService} 
+            onSubmit={handleUpdateService}
+            isLoading={servicesLoading}
+          />
+        </DialogContent>
+      </Dialog>
+      
       {/* View Service Modal */}
-      {selectedService && (
-        <Modal
-          isOpen={isViewModalOpen}
-          onClose={() => {
-            setIsViewModalOpen(false);
-            setSelectedService(null);
-          }}
-          title={t('services.serviceDetails')}
-          size="md"
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-sm text-secondary-500">{t('services.name')}</p>
-                <p className="font-medium">{selectedService.name}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('services.fee')}</p>
-                <p className="font-medium">${selectedService.fee} / {getFeeTypeLabel(selectedService.feeType)}</p>
-              </div>
-
-              <div className="col-span-2">
-                <p className="text-sm text-secondary-500">{t('services.description')}</p>
-                <p className="font-medium">{selectedService.description || t('common.notAvailable')}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-secondary-500">{t('services.icon')}</p>
-                <p className="font-medium">{selectedService.icon || t('common.notAvailable')}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 justify-end pt-4 mt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  handleEditService(selectedService);
-                }}
-                className="px-4 py-2 text-white rounded-md bg-primary-500 hover:bg-primary-600"
-              >
-                {t('services.editService')}
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmOpen && (
-        <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-40">
-          <div className="p-6 w-full max-w-sm bg-white rounded-lg shadow-lg">
-            <h3 className="mb-4 text-lg font-semibold">{t('common.confirmDelete')}</h3>
-            <p>{t('services.confirmDeleteService')} <span className="font-bold">{serviceToDelete?.name}</span>?</p>
-            <div className="flex gap-3 justify-end mt-6">
-              <button
-                className="px-4 py-2 rounded-md border border-gray-300 text-secondary-700 hover:bg-gray-50"
-                onClick={() => { setDeleteConfirmOpen(false); setServiceToDelete(null); }}
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                className="px-4 py-2 text-white rounded-md bg-danger-500 hover:bg-danger-600"
-                onClick={confirmDeleteService}
-              >
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ServiceViewDialog 
+        service={selectedService}
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+      />
     </div>
   );
 };
 
-export default ServicesPage;
+export default ServicesPage; 
